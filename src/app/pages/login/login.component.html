@@ -26,41 +26,68 @@
           <div class="text-center text-muted mb-4">
             <small>Connectez-vous avec vos identifiants</small>
           </div>
-          <form role="form">
+
+          <!-- Error Message -->
+          <div *ngIf="errorMessage" class="alert alert-danger text-center">
+            {{ errorMessage }}
+          </div>
+
+          <form (ngSubmit)="login()" #loginForm="ngForm">
             <div class="form-group mb-3">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-email-83"></i></span>
                 </div>
-                <input class="form-control" placeholder="Email" type="email">
+                <input
+                  class="form-control"
+                  placeholder="Email"
+                  type="email"
+                  [(ngModel)]="email"
+                  name="email"
+                  required />
               </div>
             </div>
+
             <div class="form-group">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                <input class="form-control" placeholder="Mot de passe" type="password">
+                <input
+                  class="form-control"
+                  placeholder="Mot de passe"
+                  type="password"
+                  [(ngModel)]="motDePasse"
+                  name="motDePasse"
+                  required />
               </div>
             </div>
+
             <div class="custom-control custom-control-alternative custom-checkbox">
               <input class="custom-control-input" id="customCheckLogin" type="checkbox">
               <label class="custom-control-label" for="customCheckLogin">
                 <span class="text-muted">Se souvenir de moi</span>
               </label>
             </div>
+
             <div class="text-center">
-              <button type="button" class="btn btn-primary my-4">Se connecter</button>
+              <button
+                [disabled]="!loginForm.form.valid"
+                type="submit"
+                class="btn btn-primary my-4">
+                Se connecter
+              </button>
             </div>
           </form>
         </div>
       </div>
+
       <div class="row mt-3">
         <div class="col-6">
           <a href="#" class="text-light"><small>Mot de passe oublié ?</small></a>
         </div>
         <div class="col-6 text-right">
-  <a class="text-light" routerLink="/register"><small>Créer un nouveau compte</small></a>
+          <a class="text-light" routerLink="/register"><small>Créer un nouveau compte</small></a>
         </div>
       </div>
     </div>
