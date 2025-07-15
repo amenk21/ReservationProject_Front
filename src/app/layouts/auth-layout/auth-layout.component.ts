@@ -8,6 +8,8 @@ import { Router } from '@angular/router';
 })
 export class AuthLayoutComponent implements OnInit, OnDestroy {
   test: Date = new Date();
+      currentYear: number = new Date().getFullYear();
+
   public isCollapsed = true;
 
   constructor(private router: Router) { }
