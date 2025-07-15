@@ -25,47 +25,88 @@
           <div class="text-center text-muted mb-4">
             <small>Inscrivez-vous avec vos informations</small>
           </div>
-          <form role="form">
+
+          <!-- ✅ Messages -->
+          <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+          <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+
+          <form role="form" (ngSubmit)="register()">
             <!-- Nom -->
             <div class="form-group">
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-hat-3"></i></span>
                 </div>
-                <input class="form-control" placeholder="Nom" type="text" name="nom" required maxlength="100">
+                <input
+                  class="form-control"
+                  placeholder="Nom"
+                  type="text"
+                  name="nom"
+                  [(ngModel)]="nom"
+                  required
+                  maxlength="100"
+                >
               </div>
             </div>
+
             <!-- Email -->
             <div class="form-group">
               <div class="input-group input-group-alternative mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-email-83"></i></span>
                 </div>
-                <input class="form-control" placeholder="Email" type="email" name="email" required maxlength="150">
+                <input
+                  class="form-control"
+                  placeholder="Email"
+                  type="email"
+                  name="email"
+                  [(ngModel)]="email"
+                  required
+                  maxlength="150"
+                >
               </div>
             </div>
+
             <!-- Mot de passe -->
+            <div class="form-group">
+              <div class="input-group input-group-alternative mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
+                </div>
+                <input
+                  class="form-control"
+                  placeholder="Mot de passe"
+                  type="password"
+                  name="motDePasse"
+                  [(ngModel)]="motDePasse"
+                  required
+                >
+              </div>
+            </div>
+
+            <!-- Confirmer le mot de passe -->
             <div class="form-group">
               <div class="input-group input-group-alternative">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="ni ni-lock-circle-open"></i></span>
                 </div>
-                <input class="form-control" placeholder="Mot de passe" type="password" name="motDePasse" required>
+                <input
+                  class="form-control"
+                  placeholder="Confirmer le mot de passe"
+                  type="password"
+                  name="confirmMotDePasse"
+                  [(ngModel)]="confirmMotDePasse"
+                  required
+                >
               </div>
             </div>
 
-            <!-- Conditions -->
-            <div class="row my-4">
-              <div class="col-12">
-                
-              </div>
-            </div>
-
-            <!-- Bouton d'envoi -->
+            <!-- Bouton -->
             <div class="text-center">
               <button type="submit" class="btn btn-primary mt-4">Créer un compte</button>
             </div>
           </form>
+
         </div>
       </div>
     </div>
