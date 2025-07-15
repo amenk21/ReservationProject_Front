@@ -26,7 +26,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     this.utilisateurService.login(this.email, this.motDePasse).subscribe({
       next: (user: Utilisateur) => {
         localStorage.setItem('currentUser', JSON.stringify(user));
-        this.router.navigate(['/dashboard']); // redirect after login
+        console.log('Login successful', user);
+        this.router.navigate(['/dashboard']); 
       },
       error: (err) => {
         console.error('Login failed', err);
