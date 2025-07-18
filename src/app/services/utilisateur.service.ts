@@ -93,6 +93,17 @@ export class UtilisateurService {
       catchError(this.handleError)
     );
   }
+  getCurrentUser(): Utilisateur | null {
+  const userJson = localStorage.getItem('currentUser');
+  if (!userJson) return null;
+
+  try {
+    return JSON.parse(userJson) as Utilisateur;
+  } catch (e) {
+    console.error('Erreur de parsing de currentUser:', e);
+    return null;
+  }
+}
 
 
 }

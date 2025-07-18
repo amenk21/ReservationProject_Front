@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { UtilisateurService, Utilisateur } from 'src/app/services/utilisateur.service';
 import Swal from 'sweetalert2';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-list',
@@ -17,9 +18,15 @@ export class UserListComponent implements OnInit {
   currentPage = 1;
   totalPages = 1;
 
-  constructor(private utilisateurService: UtilisateurService) {}
+  currentUser: Utilisateur | null = null;
+
+  constructor(
+    private utilisateurService: UtilisateurService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
+    this.currentUser = this.utilisateurService.getCurrentUser();
     this.fetchUtilisateurs();
   }
 
@@ -99,8 +106,21 @@ export class UserListComponent implements OnInit {
       if (result.isConfirmed) {
         this.utilisateurService.delete(id).subscribe({
           next: () => {
-            Swal.fire('Supprimé', 'Utilisateur supprimé', 'success');
-            this.fetchUtilisateurs();
+            const isCurrentUser = this.currentUser?.id === id;
+            if (isCurrentUser) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Compte supprimé',
+                text: 'Votre compte a été supprimé. Vous allez être déconnecté.',
+                confirmButtonText: 'OK'
+              }).then(() => {
+                localStorage.removeItem('currentUser');
+                this.router.navigate(['/login']);
+              });
+            } else {
+              Swal.fire('Supprimé', 'Utilisateur supprimé', 'success');
+              this.fetchUtilisateurs();
+            }
           },
           error: () => Swal.fire('Erreur', 'Impossible de supprimer', 'error')
         });
