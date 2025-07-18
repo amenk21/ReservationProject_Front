@@ -6,6 +6,7 @@ import { MapsComponent } from '../../pages/maps/maps.component';
 import { UserProfileComponent } from '../../pages/user-profile/user-profile.component';
 import { TablesComponent } from '../../pages/tables/tables.component';
 import { AuthGuardService } from 'src/app/services/auth-guard.service'; 
+import { UserListComponent } from 'src/app/pages/utilisateur/user-list/user-list.component';
 
 export const AdminLayoutRoutes: Routes = [
   {
@@ -35,5 +36,12 @@ export const AdminLayoutRoutes: Routes = [
   {
     path: 'maps',
     component: MapsComponent 
-  }
+  },
+  {
+  path: 'user-list',
+  component: UserListComponent,
+  canActivate: [AuthGuardService],
+  data: { roles: ['Admin'] }
+}
+
 ];

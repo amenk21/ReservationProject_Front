@@ -1,0 +1,119 @@
+<!-- Red Header -->
+<div class="header bg-gradient-danger pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row">
+        <div class="col-xl-3 col-lg-6">
+          <div class="card card-stats mb-4 mb-xl-0">
+            <div class="card-body">
+              <div class="row">
+                <div class="col">
+                  <h5 class="card-title text-uppercase text-muted mb-0">Utilisateurs</h5>
+                  <span class="h2 font-weight-bold mb-0">{{ utilisateurs.length }}</span>
+                </div>
+                <div class="col-auto">
+                  <div class="icon icon-shape bg-danger text-white rounded-circle shadow">
+                    <i class="fas fa-users"></i>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-3 mb-0 text-muted text-sm">
+                <span class="text-success mr-2"><i class="fa fa-check"></i></span>
+                <span class="text-nowrap">Nombre total d'utilisateurs</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- Additional cards can go here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page content -->
+<div class="container-fluid mt--7">
+  <div class="row">
+    <div class="col">
+      <div class="card shadow">
+        <!-- Header with title and add button -->
+        <div class="card-header border-0 d-flex justify-content-between align-items-center">
+          <h3 class="mb-0">Liste des utilisateurs</h3>
+          <button class="btn btn-sm btn-primary" (click)="addUtilisateur()">
+            <i class="fas fa-user-plus mr-1"></i> Ajouter
+          </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive" *ngIf="!loading && utilisateursAffiches.length > 0; else loadingOrEmpty">
+          <table class="table align-items-center table-flush">
+            <thead class="thead-light">
+              <tr>
+                <th scope="col">Nom</th>
+                <th scope="col">Email</th>
+                <th scope="col">Rôle</th>
+                <th scope="col" class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let user of utilisateursAffiches">
+                <td>{{ user.nom }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="badge badge-dot mr-4">
+                    <i class="bg-info"></i> {{ user.role }}
+                  </span>
+                </td>
+                <td class="text-right">
+                  <button class="btn btn-sm btn-warning mr-2" (click)="editUtilisateur(user)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" (click)="deleteUtilisateur(user.id!)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Loading / Empty / Error states -->
+        <ng-template #loadingOrEmpty>
+          <div class="p-4" *ngIf="loading">
+            <i class="fas fa-spinner fa-spin"></i> Chargement des utilisateurs...
+          </div>
+          <div class="p-4" *ngIf="!loading && utilisateurs.length === 0">
+            <i class="fas fa-user-times text-muted"></i> Aucun utilisateur trouvé.
+          </div>
+          <div class="p-4 text-danger" *ngIf="error">{{ error }}</div>
+        </ng-template>
+
+        <!-- Pagination -->
+        <div class="card-footer py-4" *ngIf="!loading && utilisateurs.length > pageSize">
+          <nav aria-label="Pagination">
+            <ul class="pagination justify-content-end mb-0">
+              <li class="page-item" [class.disabled]="currentPage === 1">
+                <a class="page-link" href="javascript:void(0)" (click)="setPage(currentPage - 1)">
+                  <i class="fas fa-angle-left"></i>
+                </a>
+              </li>
+
+              <li class="page-item"
+                  *ngFor="let page of [].constructor(totalPages); let i = index"
+                  [class.active]="currentPage === i + 1">
+                <a class="page-link" href="javascript:void(0)" (click)="setPage(i + 1)">
+                  {{ i + 1 }}
+                </a>
+              </li>
+
+              <li class="page-item" [class.disabled]="currentPage === totalPages">
+                <a class="page-link" href="javascript:void(0)" (click)="setPage(currentPage + 1)">
+                  <i class="fas fa-angle-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
