@@ -13,12 +13,15 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { AppRoutingModule } from './app.routing';
 import { ComponentsModule } from './components/components.module';
 import { UserListComponent } from './pages/utilisateur/user-list/user-list.component';
+import { FilialeListComponent } from './pages/filiale-list/filiale-list.component';
+import { CountUpModule } from 'ngx-countup';
 
 
 @NgModule({
   imports: [
     BrowserAnimationsModule,
     FormsModule,
+     CountUpModule,
     HttpClientModule,
     ComponentsModule,
     NgbModule,
@@ -29,7 +32,8 @@ import { UserListComponent } from './pages/utilisateur/user-list/user-list.compo
     AppComponent,
     AdminLayoutComponent,
     AuthLayoutComponent,
-    UserListComponent
+    UserListComponent,
+    FilialeListComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

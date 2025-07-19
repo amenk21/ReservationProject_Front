@@ -1,0 +1,73 @@
+<!-- Header Gradient -->
+<div class="header bg-gradient-danger pb-8 pt-5 pt-md-8">
+  <div class="container-fluid">
+    <div class="header-body">
+      <div class="row align-items-center">
+        <div class="col">
+          <div class="filiale-counter">
+            <div class="counter-card">
+              <div class="counter-icon">
+                <i class="fas fa-building"></i>
+              </div>
+              <div class="counter-content">
+                <div class="counter-number" [countUp]="filiales.length">{{filiales.length}}</div>
+                <div class="counter-label">{{filiales.length === 1 ? 'Filiale' : 'Filiales'}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-white" (click)="openAddFilialeModal()">
+            <i class="fas fa-plus mr-2"></i> Ajouter Filiale
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Section Filiales -->
+<div class="filiales-container">
+  <div class="filiales-grid">
+    <div class="filiale-card" *ngFor="let filiale of filiales">
+      <div class="card-actions">
+        <button class="edit-btn" (click)="openEditModal(filiale)">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="delete-btn" (click)="confirmDelete(filiale.id)">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="card-content">
+        <div class="card-icon">
+          <i class="fas fa-building"></i>
+        </div>
+        <h3 class="card-title">{{ filiale.nom }}</h3>
+        <div class="card-phone">
+          <i class="fas fa-phone-alt phone-icon"></i>
+          <span class="phone-number">{{ filiale.telephone }}</span>
+        </div>
+        <div class="card-address">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>{{ filiale.adresse }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Si aucune filiale -->
+    <div *ngIf="filiales.length === 0 && !loading" class="no-filiales">
+      <i class="fas fa-times-circle"></i>
+      <p>Aucune filiale trouvée</p>
+    </div>
+  </div>
+
+  <!-- États de chargement -->
+  <div *ngIf="loading" class="loading-state">
+    <i class="fas fa-spinner fa-spin"></i>
+    <p>Chargement des filiales...</p>
+  </div>
+  
+  <div *ngIf="error" class="error-state">
+    {{ error }}
+  </div>
+</div>

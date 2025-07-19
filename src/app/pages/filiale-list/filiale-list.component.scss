@@ -1,0 +1,222 @@
+/* Variables */
+$primary: #3f51b5;
+$danger: #e53e3e;
+$text-dark: #2d3748;
+$text-medium: #4a5568;
+
+/* Structure */
+.filiales-container {
+  padding: 2rem;
+  background: #f8fafc;
+}
+
+.filiales-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.8rem;
+}
+
+/* Carte */
+.filiale-card {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
+.card-actions {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.edit-btn {
+  background: transparent;
+  border: none;
+  color: rgba($primary, 0.7);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: $primary;
+    transform: scale(1.1);
+  }
+}
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: rgba($danger, 0.7);
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: $danger;
+    transform: scale(1.1);
+  }
+}
+
+/* Contenu */
+.card-icon {
+  font-size: 2.2rem;
+  color: $primary;
+  margin-bottom: 1.2rem;
+}
+
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: $text-dark;
+  margin-bottom: 1rem;
+}
+
+.card-phone {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  .phone-icon {
+    color: $primary;
+    margin-right: 0.8rem;
+    font-size: 1.1rem;
+  }
+
+  .phone-number {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: $text-dark;
+  }
+}
+
+.card-address {
+  display: flex;
+  align-items: center;
+  color: $text-medium;
+  font-size: 1rem;
+
+  i {
+    color: $danger;
+    margin-right: 0.8rem;
+    font-size: 1.1rem;
+  }
+}
+
+/* États */
+.no-filiales, .loading-state {
+  text-align: center;
+  grid-column: 1 / -1;
+  padding: 2rem;
+  color: $text-medium;
+
+  i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+}
+
+.error-state {
+  grid-column: 1 / -1;
+  background: #ffebee;
+  color: #c62828;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Header */
+.header {
+  .btn-white {
+    background: white;
+    color: #d92550;
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba(255,255,255,0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    i {
+      margin-right: 0.5rem;
+    }
+  }
+
+  .badge {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+    vertical-align: middle;
+    position: relative;
+    top: -2px;
+    
+    &.badge-light {
+      background-color: rgba(255,255,255,0.9);
+      color: #d92550;
+    }
+  }
+  
+  .header-title {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+.filiale-counter {
+  .counter-card {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .counter-icon {
+    font-size: 2rem;
+    color: white;
+    margin-right: 1.5rem;
+    opacity: 0.8;
+  }
+
+  .counter-content {
+    color: white;
+  }
+
+  .counter-number {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.2rem;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .counter-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+}
