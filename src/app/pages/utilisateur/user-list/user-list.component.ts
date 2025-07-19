@@ -62,6 +62,7 @@ export class UserListComponent implements OnInit {
         `<input id="email" class="swal2-input" placeholder="Email">` +
         `<input id="motDePasse" type="password" class="swal2-input" placeholder="Mot de passe">` +
         `<select id="role" class="swal2-input">
+          <option value="">-- Sélectionnez un rôle --</option>
           <option value="Admin">Admin</option>
           <option value="Formateur">Formateur</option>
         </select>`,
@@ -69,13 +70,20 @@ export class UserListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Ajouter',
       preConfirm: () => {
-        const nom = (document.getElementById('nom') as HTMLInputElement).value;
-        const email = (document.getElementById('email') as HTMLInputElement).value;
-        const motDePasse = (document.getElementById('motDePasse') as HTMLInputElement).value;
+        const nom = (document.getElementById('nom') as HTMLInputElement).value.trim();
+        const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+        const motDePasse = (document.getElementById('motDePasse') as HTMLInputElement).value.trim();
         const role = (document.getElementById('role') as HTMLSelectElement).value;
 
+        const nomRegex = /^[A-Za-zÀ-ÿ\s'-]+$/;
+
         if (!nom || !email || !motDePasse || !role) {
-          Swal.showValidationMessage('Tous les champs sont requis');
+          Swal.showValidationMessage('Tous les champs sont obligatoires.');
+          return;
+        }
+
+        if (!nomRegex.test(nom)) {
+          Swal.showValidationMessage('Le nom ne doit contenir que des lettres.');
           return;
         }
 
@@ -85,10 +93,10 @@ export class UserListComponent implements OnInit {
       if (result.isConfirmed && result.value) {
         this.utilisateurService.register(result.value).subscribe({
           next: () => {
-            Swal.fire('Succès', 'Utilisateur ajouté', 'success');
+            Swal.fire('Succès', 'Utilisateur ajouté.', 'success');
             this.fetchUtilisateurs();
           },
-          error: () => Swal.fire('Erreur', 'Impossible d\'ajouter l\'utilisateur', 'error')
+          error: () => Swal.fire('Erreur', 'Impossible d\'ajouter l\'utilisateur.', 'error')
         });
       }
     });
@@ -118,11 +126,11 @@ export class UserListComponent implements OnInit {
                 this.router.navigate(['/login']);
               });
             } else {
-              Swal.fire('Supprimé', 'Utilisateur supprimé', 'success');
+              Swal.fire('Supprimé', 'Utilisateur supprimé.', 'success');
               this.fetchUtilisateurs();
             }
           },
-          error: () => Swal.fire('Erreur', 'Impossible de supprimer', 'error')
+          error: () => Swal.fire('Erreur', 'Impossible de supprimer.', 'error')
         });
       }
     });
@@ -135,6 +143,7 @@ export class UserListComponent implements OnInit {
         `<input id="nom" class="swal2-input" value="${user.nom}">` +
         `<input id="email" class="swal2-input" value="${user.email}">` +
         `<select id="role" class="swal2-input">
+          <option value="">-- Sélectionnez un rôle --</option>
           <option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option>
           <option value="Formateur" ${user.role === 'Formateur' ? 'selected' : ''}>Formateur</option>
         </select>`,
@@ -142,12 +151,19 @@ export class UserListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Mettre à jour',
       preConfirm: () => {
-        const nom = (document.getElementById('nom') as HTMLInputElement).value;
-        const email = (document.getElementById('email') as HTMLInputElement).value;
+        const nom = (document.getElementById('nom') as HTMLInputElement).value.trim();
+        const email = (document.getElementById('email') as HTMLInputElement).value.trim();
         const role = (document.getElementById('role') as HTMLSelectElement).value;
 
+        const nomRegex = /^[A-Za-zÀ-ÿ\s'-]+$/;
+
         if (!nom || !email || !role) {
-          Swal.showValidationMessage('Tous les champs sont requis');
+          Swal.showValidationMessage('Tous les champs sont obligatoires.');
+          return;
+        }
+
+        if (!nomRegex.test(nom)) {
+          Swal.showValidationMessage('Le nom ne doit contenir que des lettres.');
           return;
         }
 
@@ -157,10 +173,10 @@ export class UserListComponent implements OnInit {
       if (result.isConfirmed && result.value) {
         this.utilisateurService.update(user.id!, result.value).subscribe({
           next: () => {
-            Swal.fire('Mis à jour', 'Utilisateur modifié', 'success');
+            Swal.fire('Mis à jour', 'Utilisateur modifié.', 'success');
             this.fetchUtilisateurs();
           },
-          error: () => Swal.fire('Erreur', 'Échec de la mise à jour', 'error')
+          error: () => Swal.fire('Erreur', 'Échec de la mise à jour.', 'error')
         });
       }
     });
