@@ -57,15 +57,28 @@ export class UserListComponent implements OnInit {
   addUtilisateur() {
     Swal.fire({
       title: 'Ajouter un utilisateur',
-      html:
-        `<input id="nom" class="swal2-input" placeholder="Nom">` +
-        `<input id="email" class="swal2-input" placeholder="Email">` +
-        `<input id="motDePasse" type="password" class="swal2-input" placeholder="Mot de passe">` +
-        `<select id="role" class="swal2-input">
-          <option value="">-- Sélectionnez un rôle --</option>
-          <option value="Admin">Admin</option>
-          <option value="Formateur">Formateur</option>
-        </select>`,
+      html: `
+        <div class="form-group">
+          <label for="nom">Nom:</label>
+          <input id="nom" class="swal2-input" placeholder="Nom">
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input id="email" class="swal2-input" placeholder="Email">
+        </div>
+        <div class="form-group">
+          <label for="motDePasse">Mdp:</label>
+          <input id="motDePasse" type="password" class="swal2-input" placeholder="Mot de passe">
+        </div>
+        <div class="form-group">
+          <label for="role">Rôle:</label>
+          <select id="role" class="swal2-input">
+            <option value="">-- Sélectionnez un rôle --</option>
+            <option value="Admin">Admin</option>
+            <option value="Formateur">Formateur</option>
+          </select>
+        </div>
+      `,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Ajouter',
@@ -139,14 +152,24 @@ export class UserListComponent implements OnInit {
   editUtilisateur(user: Utilisateur) {
     Swal.fire({
       title: 'Modifier utilisateur',
-      html:
-        `<input id="nom" class="swal2-input" value="${user.nom}">` +
-        `<input id="email" class="swal2-input" value="${user.email}">` +
-        `<select id="role" class="swal2-input">
-          <option value="">-- Sélectionnez un rôle --</option>
-          <option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option>
-          <option value="Formateur" ${user.role === 'Formateur' ? 'selected' : ''}>Formateur</option>
-        </select>`,
+      html: `
+        <div class="form-group">
+          <label for="nom">Nom:</label>
+          <input id="nom" class="swal2-input" value="${user.nom}">
+        </div>
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input id="email" class="swal2-input" value="${user.email}">
+        </div>
+        <div class="form-group">
+          <label for="role">Rôle:</label>
+          <select id="role" class="swal2-input">
+            <option value="">-- Sélectionnez un rôle --</option>
+            <option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option>
+            <option value="Formateur" ${user.role === 'Formateur' ? 'selected' : ''}>Formateur</option>
+          </select>
+        </div>
+      `,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Mettre à jour',
