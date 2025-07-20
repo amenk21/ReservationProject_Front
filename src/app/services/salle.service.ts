@@ -53,4 +53,8 @@ export class SalleService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, this.httpOptions).pipe(catchError(this.handleError));
   }
+  getByFilialeId(filialeId: string): Observable<Salle[]> {
+  return this.http.get<Salle[]>(`${this.apiUrl}/filiale/${filialeId}`, this.httpOptions)
+    .pipe(catchError(this.handleError));
+}
 }

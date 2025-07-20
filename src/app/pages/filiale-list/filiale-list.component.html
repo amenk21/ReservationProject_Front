@@ -37,6 +37,12 @@
         <button class="delete-btn" (click)="confirmDelete(filiale.id)">
           <i class="fas fa-trash"></i>
         </button>
+       <button class="add-salle-btn" (click)="openAddSalleModal(filiale.id)">
+      <i class="fas fa-plus-circle"></i> Ajouter Salle
+    </button>
+     <button class="details-btn" (click)="openSallesDetailsModal(filiale.id)">
+      <i class="fas fa-list"></i> Détails
+    </button>
       </div>
       <div class="card-content">
         <div class="card-icon">
