@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+ import { Component, OnInit } from '@angular/core';
 import { FilialeService, Filiale } from 'src/app/services/filiale.service';
 import { SalleService, Salle, StatutSalle } from 'src/app/services/salle.service';
 
@@ -15,6 +15,8 @@ export class FilialeListComponent implements OnInit {
   filiales: Filiale[] = [];
   loading = false;
   error: string | null = null;
+  sallesByFiliale: { [key: string]: Salle[] } = {}; // Stockage local des salles
+
 
   constructor(private filialeService: FilialeService,  private salleService: SalleService
 ) {}
@@ -23,7 +25,7 @@ export class FilialeListComponent implements OnInit {
     this.loadFiliales();
   }
 
-  loadFiliales(): void {
+   loadFiliales(): void {
     this.loading = true;
     this.error = null;
     this.filialeService.getAll().subscribe({
@@ -38,6 +40,18 @@ export class FilialeListComponent implements OnInit {
       }
     });
   }
+openMapsWithName(filialeName: string, address?: string): void {
+  // Utilise le nom de la filiale comme requête principale
+  let query = encodeURIComponent(filialeName);
+  
+  // Ajoute l'adresse si elle existe pour améliorer la précision
+  if (address) {
+    query += encodeURIComponent(` ${address}`);
+  }
+  
+  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+}
+
  openAddSalleModal(filialeId: string): void {
     Swal.fire({
       title: '<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Ajouter une salle</span>',
@@ -111,8 +125,7 @@ export class FilialeListComponent implements OnInit {
             }
           }
         </style>
-        
-        <div style="text-align: left; width: 100%">
+              <div style="text-align: left; width: 100%">
           <div style="position: relative; margin-bottom: 1.5rem;">
             <label class="swal2-label">Nom de la salle</label>
             <i class="fas fa-door-open" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
@@ -138,15 +151,6 @@ export class FilialeListComponent implements OnInit {
       showCancelButton: true,
       confirmButtonText: '<i class="fas fa-plus-circle"></i> Ajouter',
       cancelButtonText: '<i class="fas fa-times"></i> Annuler',
-      confirmButtonColor: '#5e72e4',
-      cancelButtonColor: '#f5365c',
-      focusConfirm: false,
-      showClass: {
-        popup: 'animate__animated animate__fadeInDown'
-      },
-      hideClass: {
-        popup: 'animate__animated animate__fadeOutUp'
-      },
       preConfirm: () => {
         const nom = (document.getElementById('salle-nom') as HTMLInputElement).value;
         const capacite = (document.getElementById('salle-capacite') as HTMLInputElement).value;
@@ -175,9 +179,16 @@ export class FilialeListComponent implements OnInit {
     });
   }
 
+
   addSalle(salle: Salle): void {
     this.salleService.add(salle).subscribe({
-      next: () => {
+      next: (newSalle) => {
+        // Ajoute la salle au stockage local
+        if (!this.sallesByFiliale[salle.filialeId]) {
+          this.sallesByFiliale[salle.filialeId] = [];
+        }
+        this.sallesByFiliale[salle.filialeId].push(newSalle);
+        
         Swal.fire({
           title: 'Succès!',
           text: 'La salle a été ajoutée avec succès.',
@@ -262,130 +273,332 @@ export class FilialeListComponent implements OnInit {
     });
   }
   openSallesDetailsModal(filialeId: string): void {
-  this.loading = true;
-  this.salleService.getByFilialeId(filialeId).subscribe({
-    next: (salles) => {
+    this.loading = true;
+    
+    // Vérifie d'abord si on a déjà les salles en mémoire
+    if (this.sallesByFiliale[filialeId]) {
       this.loading = false;
-      this.showSallesDetails(filialeId, salles);
-    },
-    error: (err) => {
-      this.loading = false;
-      Swal.fire('Erreur!', "Impossible de charger les salles de cette filiale.", 'error');
-      console.error(err);
+      this.showSallesDetails(filialeId, this.sallesByFiliale[filialeId]);
+      return;
     }
-  });
-}
+
+    // Sinon, charge les salles depuis l'API
+    this.salleService.getByFilialeId(filialeId).subscribe({
+      next: (salles) => {
+        this.sallesByFiliale[filialeId] = salles; // Stocke en mémoire
+        this.loading = false;
+        this.showSallesDetails(filialeId, salles);
+      },
+      error: (err) => {
+        this.loading = false;
+        Swal.fire('Erreur!', "Impossible de charger les salles de cette filiale.", 'error');
+        console.error(err);
+      }
+    });
+  }
 
 private showSallesDetails(filialeId: string, salles: Salle[]): void {
-  const filiale = this.filiales.find(f => f.id === filialeId);
-  
+    const filiale = this.filiales.find(f => f.id === filialeId);
+    
+    Swal.fire({
+      title: `<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Salles de ${filiale?.nom}</span>`,
+      html: `
+        <style>
+          .salles-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 10px;
+          }
+          .salle-item {
+            background: #f8f9fe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #5e72e4;
+            transition: all 0.3s;
+            position: relative;
+          }
+          .salle-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+          }
+          .salle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+          }
+          .salle-title {
+            font-weight: 600;
+            color: #5e72e4;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+          }
+          .salle-title i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+          }
+          .salle-capacity {
+            background: #e9ecef;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+          }
+          .salle-status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 5px;
+          }
+          .salle-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+          }
+          .edit-salle-btn, .delete-salle-btn {
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .edit-salle-btn {
+            background-color: #5e72e4;
+            color: white;
+          }
+          .edit-salle-btn:hover {
+            background-color: #4a5acf;
+          }
+          .delete-salle-btn {
+            background-color: #f5365c;
+            color: white;
+          }
+          .delete-salle-btn:hover {
+            background-color: #e03150;
+          }
+          .status-disponible {
+            background: #2dce891a;
+            color: #2dce89;
+          }
+          .status-reservee {
+            background: #fb63401a;
+            color: #fb6340;
+          }
+          .status-maintenance {
+            background: #f5365c1a;
+            color: #f5365c;
+          }
+          .no-salles {
+            text-align: center;
+            padding: 20px;
+            color: #adb5bd;
+          }
+          .no-salles i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+          }
+        </style>
+        
+        <div class="salles-container">
+          ${salles.length > 0 ? 
+            salles.map(salle => `
+              <div class="salle-item" id="salle-${salle.id}">
+                <div class="salle-header">
+                  <div class="salle-title">
+                    <i class="fas fa-door-open"></i>
+                    ${salle.nom}
+                  </div>
+                  <div class="salle-capacity">
+                    <i class="fas fa-users"></i> ${salle.capacite} places
+                  </div>
+                </div>
+                <div class="salle-status status-${salle.statut.toLowerCase().replace('é', 'e')}">
+                  <i class="fas ${this.getStatusIcon(salle.statut)}"></i> ${salle.statut}
+                </div>
+                <div class="salle-actions">
+                  <button class="edit-salle-btn" onclick="angularComponentRef.editSalle('${filialeId}', '${salle.id}')">
+                    <i class="fas fa-edit"></i> Modifier
+                  </button>
+                  <button class="delete-salle-btn" onclick="angularComponentRef.confirmDeleteSalle('${filialeId}', '${salle.id}', '${salle.nom}')">
+                    <i class="fas fa-trash"></i> Supprimer
+                  </button>
+                </div>
+              </div>
+            `).join('') 
+            : `
+            <div class="no-salles">
+              <i class="fas fa-door-closed"></i>
+              <p>Aucune salle disponible pour cette filiale</p>
+            </div>
+            `}
+        </div>
+      `,
+      width: '800px',
+      showConfirmButton: false,
+      showCloseButton: true,
+      didOpen: () => {
+        // Permet d'accéder aux méthodes du composant depuis le HTML de SweetAlert
+        (window as any).angularComponentRef = this;
+      }
+    });
+  }
+ deleteSalle(filialeId: string, salleId: string): void {
+    this.salleService.delete(salleId).subscribe({
+      next: () => {
+        // Supprime la salle du stockage local
+        this.sallesByFiliale[filialeId] = this.sallesByFiliale[filialeId]?.filter(s => s.id !== salleId);
+        
+        Swal.fire('Supprimé!', 'La salle a été supprimée.', 'success');
+        // Recharge les détails
+        this.showSallesDetails(filialeId, this.sallesByFiliale[filialeId] || []);
+      },
+      error: (err) => {
+        Swal.fire('Erreur!', "Une erreur s'est produite lors de la suppression.", 'error');
+        console.error(err);
+      }
+    });
+  }
+   confirmDeleteSalle(filialeId: string, salleId: string, salleNom: string): void {
+    Swal.fire({
+      title: 'Êtes-vous sûr?',
+      html: `Vous allez supprimer la salle <b>${salleNom}</b>`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f5365c',
+      cancelButtonColor: '#5e72e4',
+      confirmButtonText: 'Oui, supprimer!',
+      cancelButtonText: 'Annuler'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.deleteSalle(filialeId, salleId);
+      }
+    });
+  }
+  updateSalle(salle: Salle): void {
+    this.salleService.update(salle.id, salle).subscribe({
+      next: (updatedSalle) => {
+        // Met à jour la salle dans le stockage local
+        const index = this.sallesByFiliale[salle.filialeId]?.findIndex(s => s.id === salle.id);
+        if (index !== undefined && index !== -1) {
+          this.sallesByFiliale[salle.filialeId][index] = updatedSalle;
+        }
+        
+        Swal.fire('Succès!', 'La salle a été modifiée avec succès.', 'success');
+        // Recharge les détails
+        this.showSallesDetails(salle.filialeId, this.sallesByFiliale[salle.filialeId]);
+      },
+      error: (err) => {
+        Swal.fire('Erreur!', "Une erreur s'est produite lors de la modification.", 'error');
+        console.error(err);
+      }
+    });
+  }
+   editSalle(filialeId: string, salleId: string): void {
+  const salle = this.sallesByFiliale[filialeId]?.find(s => s.id === salleId);
+  if (!salle) return;
+
   Swal.fire({
-    title: `<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Salles de ${filiale?.nom}</span>`,
+    title: '<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Modifier la salle</span>',
     html: `
       <style>
-        .salles-container {
-          max-height: 60vh;
-          overflow-y: auto;
-          padding-right: 10px;
+        .edit-salle-container {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          width: 100%;
         }
-        .salle-item {
-          background: #f8f9fe;
+        .form-group-edit {
+          position: relative;
+        }
+        .form-group-edit label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #525f7f;
+          font-weight: 500;
+          font-size: 0.95rem;
+        }
+        .form-group-edit input, 
+        .form-group-edit select {
+          width: 100%;
+          padding: 0.75rem 1rem 0.75rem 2.5rem;
+          border: 1px solid #e9ecef;
           border-radius: 8px;
-          padding: 15px;
-          margin-bottom: 15px;
-          border-left: 4px solid #5e72e4;
-          transition: all 0.3s;
+          background-color: #f8f9fe;
+          font-size: 0.95rem;
+          color: #2d3748;
         }
-        .salle-item:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        .form-group-edit input:focus, 
+        .form-group-edit select:focus {
+          border-color: #5e72e4;
+          box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.15);
+          outline: none;
         }
-        .salle-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px;
-        }
-        .salle-title {
-          font-weight: 600;
+        .form-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
           color: #5e72e4;
           font-size: 1.1rem;
-          display: flex;
-          align-items: center;
-        }
-        .salle-title i {
-          margin-right: 10px;
-          font-size: 1.2rem;
-        }
-        .salle-capacity {
-          background: #e9ecef;
-          padding: 3px 10px;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 600;
-        }
-        .salle-status {
-          display: inline-block;
-          padding: 3px 10px;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          margin-top: 5px;
-        }
-        .status-disponible {
-          background: #2dce891a;
-          color: #2dce89;
-        }
-        .status-reservee {
-          background: #fb63401a;
-          color: #fb6340;
-        }
-        .status-maintenance {
-          background: #f5365c1a;
-          color: #f5365c;
-        }
-        .no-salles {
-          text-align: center;
-          padding: 20px;
-          color: #adb5bd;
-        }
-        .no-salles i {
-          font-size: 2rem;
-          margin-bottom: 10px;
         }
       </style>
-      
-      <div class="salles-container">
-        ${salles.length > 0 ? 
-          salles.map(salle => `
-            <div class="salle-item">
-              <div class="salle-header">
-                <div class="salle-title">
-                  <i class="fas fa-door-open"></i>
-                  ${salle.nom}
-                </div>
-                <div class="salle-capacity">
-                  <i class="fas fa-users"></i> ${salle.capacite} places
-                </div>
-              </div>
-              <div class="salle-status status-${salle.statut.toLowerCase().replace('é', 'e')}">
-                <i class="fas ${this.getStatusIcon(salle.statut)}"></i> ${salle.statut}
-              </div>
-            </div>
-          `).join('') 
-          : `
-          <div class="no-salles">
-            <i class="fas fa-door-closed"></i>
-            <p>Aucune salle disponible pour cette filiale</p>
+
+      <div class="edit-salle-container">
+        <div class="form-group-edit">
+          <label for="edit-salle-nom">Nom de la salle</label>
+          <div style="position: relative">
+            <i class="fas fa-door-open form-icon"></i>
+            <input id="edit-salle-nom" value="${salle.nom}" placeholder="Nom de la salle">
           </div>
-          `}
+        </div>
+
+        <div class="form-group-edit">
+          <label for="edit-salle-capacite">Capacité</label>
+          <div style="position: relative">
+            <i class="fas fa-users form-icon"></i>
+            <input type="number" id="edit-salle-capacite" value="${salle.capacite}" min="1" placeholder="Nombre de places">
+          </div>
+        </div>
+
+        <div class="form-group-edit">
+          <label for="edit-salle-statut">Statut</label>
+          <div style="position: relative">
+            <i class="fas fa-info-circle form-icon"></i>
+            <select id="edit-salle-statut">
+              <option value="${StatutSalle.Disponible}" ${salle.statut === StatutSalle.Disponible ? 'selected' : ''}>Disponible</option>
+              <option value="${StatutSalle.Reservée}" ${salle.statut === StatutSalle.Reservée ? 'selected' : ''}>Réservée</option>
+              <option value="${StatutSalle.EnMaintenance}" ${salle.statut === StatutSalle.EnMaintenance ? 'selected' : ''}>En Maintenance</option>
+            </select>
+          </div>
+        </div>
       </div>
     `,
-    width: '800px',
-    showConfirmButton: false,
-    showCloseButton: true,
-    background: '#fff',
-    backdrop: 'rgba(0,0,0,0.05)'
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-save"></i> Enregistrer',
+    cancelButtonText: '<i class="fas fa-times"></i> Annuler',
+    confirmButtonColor: '#5e72e4',
+    cancelButtonColor: '#f5365c',
+    focusConfirm: false,
+    width: '600px',
+    preConfirm: () => {
+      return {
+        id: salleId,
+        nom: (document.getElementById('edit-salle-nom') as HTMLInputElement).value,
+        capacite: parseInt((document.getElementById('edit-salle-capacite') as HTMLInputElement).value),
+        statut: (document.getElementById('edit-salle-statut') as HTMLSelectElement).value as StatutSalle,
+        filialeId: filialeId
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed && result.value) {
+      this.updateSalle(result.value);
+    }
   });
 }
 
