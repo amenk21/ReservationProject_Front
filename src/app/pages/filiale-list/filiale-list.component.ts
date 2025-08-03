@@ -2,6 +2,9 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { FilialeService, Filiale } from 'src/app/services/filiale.service';
 import { SalleService, Salle, StatutSalle } from 'src/app/services/salle.service';
 import { ReservationService } from 'src/app/services/reservation.service';
+import { UtilisateurService } from 'src/app/services/utilisateur.service';
+
+
 import Swal from 'sweetalert2';
 import { CountUp } from 'countup.js';
 import { FullCalendarComponent } from '@fullcalendar/angular';
@@ -41,7 +44,9 @@ export class FilialeListComponent implements OnInit {
   constructor(
     private filialeService: FilialeService,
     private salleService: SalleService,
-    private reservationService: ReservationService
+    private reservationService: ReservationService,
+    private utilisateurService: UtilisateurService
+
   ) {}
 
   ngOnInit(): void {
@@ -464,6 +469,9 @@ export class FilialeListComponent implements OnInit {
                   <button class="calendar-btn" onclick="angularComponentRef.openReservationsCalendar('${salle.id}')">
                     <i class="fas fa-calendar-alt"></i> Réservations
                   </button>
+                   <button class="calendar-btn" style="background-color:#2dce89;" onclick="angularComponentRef.openReservationForm('${salle.id}')">
+    <i class="fas fa-plus-circle"></i> Réserver
+  </button>
                   <button class="edit-salle-btn" onclick="angularComponentRef.editSalle('${filialeId}', '${salle.id}')">
                     <i class="fas fa-edit"></i> Modifier
                   </button>
@@ -829,4 +837,154 @@ export class FilialeListComponent implements OnInit {
       }
     });
   }
+openReservationForm(salleId: string): void {
+  const currentUser = this.utilisateurService.getCurrentUser();
+
+  if (!currentUser || !currentUser.id) {
+    Swal.fire('Erreur', "Utilisateur non connecté ou ID manquant.", 'error');
+    return;
+  }
+
+  const tomorrowStr = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
+
+  Swal.fire({
+    title: '<span style="color:#5e72e4; font-size: 1.5rem; font-weight: 600">Nouvelle réservation</span>',
+    html: `
+      <style>
+        .swal2-popup {
+          font-family: 'Poppins', sans-serif;
+          border-radius: 12px;
+        }
+        .swal2-popup .swal2-input, 
+        .swal2-popup .swal2-select,
+        .swal2-popup .swal2-textarea {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          background-color: #f8f9fe;
+          transition: all 0.3s;
+          font-size: 0.95rem;
+          color: #2d3748;
+          margin: 0.5rem 0;
+        }
+        .swal2-popup .swal2-input:focus, 
+        .swal2-popup .swal2-select:focus {
+          border-color: #5e72e4;
+          box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.15);
+          outline: none;
+        }
+        .swal2-popup .swal2-label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #525f7f;
+          font-weight: 500;
+          font-size: 0.9rem;
+          text-align: left;
+          width: 100%;
+        }
+        .swal2-popup .swal2-actions {
+          margin-top: 1.5rem;
+          gap: 0.75rem;
+        }
+        .swal2-popup .swal2-styled {
+          border-radius: 8px !important;
+          padding: 0.75rem 1.5rem !important;
+          font-weight: 600 !important;
+          font-size: 0.9rem !important;
+          transition: all 0.2s !important;
+        }
+        .swal2-popup .swal2-confirm {
+          background-color: #5e72e4 !important;
+        }
+        .swal2-popup .swal2-confirm:hover {
+          background-color: #4a5acf !important;
+          transform: translateY(-1px);
+        }
+        .swal2-popup .swal2-cancel:hover {
+          background-color: #e03150 !important;
+          transform: translateY(-1px);
+        }
+        @media (max-width: 600px) {
+          .swal2-popup {
+            width: 90% !important;
+            margin: 0 auto !important;
+          }
+        }
+      </style>
+      <div style="text-align: left; width: 100%">
+        <div style="position: relative; margin-bottom: 1.5rem;">
+          <label class="swal2-label">Date de début</label>
+          <i class="fas fa-calendar-plus" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
+          <input type="datetime-local" id="date-debut" class="swal2-input" min="${tomorrowStr}" style="padding-left: 40px !important;">
+        </div>
+
+        <div style="position: relative; margin-bottom: 1.5rem;">
+          <label class="swal2-label">Date de fin</label>
+          <i class="fas fa-calendar-check" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
+          <input type="datetime-local" id="date-fin" class="swal2-input" min="${tomorrowStr}" style="padding-left: 40px !important;">
+        </div>
+
+        <div style="position: relative; margin-bottom: 1.5rem;">
+          <label class="swal2-label">Motif</label>
+          <i class="fas fa-comment-dots" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
+          <input type="text" id="motif" class="swal2-input" placeholder="Ex: Réunion projet" style="padding-left: 40px !important;">
+        </div>
+      </div>
+    `,
+    confirmButtonText: '<i class="fas fa-calendar-check"></i> Réserver',
+    cancelButtonText: '<i class="fas fa-times"></i> Annuler',
+    showCancelButton: true,
+    preConfirm: () => {
+      const dateDebut = (document.getElementById('date-debut') as HTMLInputElement).value;
+      const dateFin = (document.getElementById('date-fin') as HTMLInputElement).value;
+      const motif = (document.getElementById('motif') as HTMLInputElement).value;
+
+      if (!dateDebut || !dateFin) {
+        Swal.showValidationMessage('Les dates de début et fin sont obligatoires.');
+        return false;
+      }
+
+      if (new Date(dateFin) <= new Date(dateDebut)) {
+        Swal.showValidationMessage('La date de fin doit être postérieure à la date de début.');
+        return false;
+      }
+
+      return {
+        salleId,
+        utilisateurId: currentUser.id,
+        dateDebut,
+        dateFin,
+        motif,
+        statut: 'EnAttente'
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed && result.value) {
+      this.reservationService.create(result.value).subscribe({
+        next: () => {
+          Swal.fire({
+            title: 'Succès!',
+            text: 'La salle a été réservée avec succès.',
+            icon: 'success',
+            confirmButtonColor: '#5e72e4',
+            timer: 2000
+          });
+          this.openReservationsCalendar(salleId);
+        },
+        error: (err) => {
+          Swal.fire({
+            title: 'Erreur!',
+            text: "La réservation a échoué.",
+            icon: 'error',
+            confirmButtonColor: '#f5365c'
+          });
+          console.error(err);
+        }
+      });
+    }
+  });
+}
+
+
 }
