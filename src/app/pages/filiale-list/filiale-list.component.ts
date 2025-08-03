@@ -516,9 +516,13 @@ export class FilialeListComponent implements OnInit {
   }
 
   private showReservationsCalendar(reservations: any[]): void {
-  const events: EventInput[] = reservations.map(res => ({
+  const events: EventInput[] = reservations.map(res => {
+  const startTime = new Date(res.dateDebut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const endTime = new Date(res.dateFin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  return {
     id: res.id,
-    title: res.motif || 'Réservation',
+    title: `${res.motif || 'Réservation'} (${startTime} - ${endTime})`,
     start: res.dateDebut,
     end: res.dateFin,
     backgroundColor: this.getReservationStatusColor(res.statut),
@@ -526,9 +530,13 @@ export class FilialeListComponent implements OnInit {
     extendedProps: {
       salleId: res.salleId,
       utilisateurId: res.utilisateurId,
-      motif: res.motif
+      motif: res.motif,
+      dateDebut: res.dateDebut,
+      dateFin: res.dateFin
     }
-  }));
+  };
+});
+
 
   // Update FullCalendar component directly
   setTimeout(() => {
@@ -559,7 +567,7 @@ export class FilialeListComponent implements OnInit {
         <p><strong>Fin:</strong> ${event.end?.toLocaleString() || 'Non spécifié'}</p>
         <label for="statut-select"><strong>Statut:</strong></label>
         <select id="statut-select" class="swal2-select" style="margin-top: 5px;">
-          <option value="EnAttente" ${event.backgroundColor === '#fb6340' ? 'selected' : ''}>En Attente</option>
+          <option value="EnAttente" ${event.backgroundColor === '#fcd34d' ? 'selected' : ''}>En Attente</option>
           <option value="Validée" ${event.backgroundColor === '#2dce89' ? 'selected' : ''}>Validée</option>
           <option value="Refusée" ${event.backgroundColor === '#f5365c' ? 'selected' : ''}>Refusée</option>
         </select>
@@ -596,7 +604,7 @@ export class FilialeListComponent implements OnInit {
     switch(statut) {
       case 'Validée': return '#2dce89';
       case 'Refusée': return '#f5365c';
-      case 'EnAttente': return '#fb6340';
+      case 'EnAttente': return '#fcd34d';
       default: return '#5e72e4';
     }
   }
