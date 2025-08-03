@@ -10,7 +10,7 @@
                 <i class="fas fa-building"></i>
               </div>
               <div class="counter-content">
-                <div class="counter-number" [countUp]="filiales.length">{{filiales.length}}</div>
+                <div class="counter-number" id="counter-number">{{filiales.length}}</div>
                 <div class="counter-label">{{filiales.length === 1 ? 'Filiale' : 'Filiales'}}</div>
               </div>
             </div>
@@ -37,23 +37,24 @@
         <button class="delete-btn" (click)="confirmDelete(filiale.id)">
           <i class="fas fa-trash"></i>
         </button>
-       <button class="add-salle-btn" (click)="openAddSalleModal(filiale.id)">
-      <i class="fas fa-plus-circle"></i> Ajouter Salle
-    </button>
-     <button class="details-btn" (click)="openSallesDetailsModal(filiale.id)">
-      <i class="fas fa-list"></i> Détails
-    </button>
+        <button class="add-salle-btn" (click)="openAddSalleModal(filiale.id)">
+          <i class="fas fa-plus-circle"></i> Ajouter Salle
+        </button>
+        <button class="details-btn" (click)="openSallesDetailsModal(filiale.id)">
+          <i class="fas fa-list"></i> Détails
+        </button>
       </div>
       <div class="card-content">
         <div class="card-icon">
           <i class="fas fa-building"></i>
         </div>
-<h3 class="card-title" (click)="openMapsWithName(filiale.nom, filiale.adresse)">
-  {{ filiale.nom }}
-</h3>      <div class="card-phone">
-  <i class="fas fa-phone"></i>
-  <span class="phone-number">{{ filiale.telephone }}</span>
-</div>
+        <h3 class="card-title" (click)="openMapsWithName(filiale.nom, filiale.adresse)">
+          {{ filiale.nom }}
+        </h3>
+        <div class="card-phone">
+          <i class="fas fa-phone"></i>
+          <span class="phone-number">{{ filiale.telephone }}</span>
+        </div>
         <div class="card-address">
           <i class="fas fa-map-marker-alt"></i>
           <span>{{ filiale.adresse }}</span>
@@ -78,3 +79,6 @@
     {{ error }}
   </div>
 </div>
+
+<!-- FullCalendar component -->
+<full-calendar #calendar [options]="calendarOptions"></full-calendar>

@@ -16,18 +16,9 @@ import { UserListComponent } from './pages/utilisateur/user-list/user-list.compo
 import { FilialeListComponent } from './pages/filiale-list/filiale-list.component';
 import { CountUpModule } from 'ngx-countup';
 
+import { FullCalendarModule } from '@fullcalendar/angular';
 
 @NgModule({
-  imports: [
-    BrowserAnimationsModule,
-    FormsModule,
-     CountUpModule,
-    HttpClientModule,
-    ComponentsModule,
-    NgbModule,
-    RouterModule,
-    AppRoutingModule
-  ],
   declarations: [
     AppComponent,
     AdminLayoutComponent,
@@ -35,7 +26,18 @@ import { CountUpModule } from 'ngx-countup';
     UserListComponent,
     FilialeListComponent
   ],
+  imports: [
+    BrowserAnimationsModule,
+    FormsModule,
+    HttpClientModule,
+    RouterModule,
+    ComponentsModule,
+    NgbModule,
+    AppRoutingModule,
+    CountUpModule,
+    FullCalendarModule // ✅ Just import the module without registerPlugins
+  ],
   providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {}

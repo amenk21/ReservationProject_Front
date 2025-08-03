@@ -71,4 +71,8 @@ export class ReservationService {
     return this.http.put<Reservation>(`${this.apiUrl}/changer-statut`, command, this.httpOptions)
       .pipe(catchError(this.handleError));
   }
+   getBySalleId(salleId: string): Observable<Reservation[]> {
+    return this.http.get<Reservation[]>(`${this.apiUrl}/by-salle/${salleId}`, this.httpOptions)
+      .pipe(catchError(this.handleError));
+  }
 }

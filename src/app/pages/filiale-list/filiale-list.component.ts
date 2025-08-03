@@ -1,10 +1,14 @@
- import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FilialeService, Filiale } from 'src/app/services/filiale.service';
 import { SalleService, Salle, StatutSalle } from 'src/app/services/salle.service';
-
+import { ReservationService } from 'src/app/services/reservation.service';
 import Swal from 'sweetalert2';
 import { CountUp } from 'countup.js';
-
+import { FullCalendarComponent } from '@fullcalendar/angular';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 
 @Component({
   selector: 'app-filiale-list',
@@ -12,26 +16,46 @@ import { CountUp } from 'countup.js';
   styleUrls: ['./filiale-list.component.scss']
 })
 export class FilialeListComponent implements OnInit {
+  @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
   filiales: Filiale[] = [];
   loading = false;
   error: string | null = null;
-  sallesByFiliale: { [key: string]: Salle[] } = {}; // Stockage local des salles
+  sallesByFiliale: { [key: string]: Salle[] } = {};
 
+  calendarOptions: CalendarOptions = {
+    initialView: 'dayGridMonth',
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: [],
+    eventColor: '#5e72e4',
+    eventTextColor: '#fff',
+    editable: false,
+    selectable: true,
+    locale: 'fr'
+  };
 
-  constructor(private filialeService: FilialeService,  private salleService: SalleService
-) {}
+  constructor(
+    private filialeService: FilialeService,
+    private salleService: SalleService,
+    private reservationService: ReservationService
+  ) {}
 
   ngOnInit(): void {
     this.loadFiliales();
   }
 
-   loadFiliales(): void {
+  loadFiliales(): void {
     this.loading = true;
     this.error = null;
     this.filialeService.getAll().subscribe({
       next: (data) => {
         this.filiales = data;
         this.loading = false;
+        this.animateCounter();
       },
       error: (err) => {
         this.error = "Erreur lors du chargement des filiales.";
@@ -40,19 +64,16 @@ export class FilialeListComponent implements OnInit {
       }
     });
   }
-openMapsWithName(filialeName: string, address?: string): void {
-  // Utilise le nom de la filiale comme requête principale
-  let query = encodeURIComponent(filialeName);
-  
-  // Ajoute l'adresse si elle existe pour améliorer la précision
-  if (address) {
-    query += encodeURIComponent(` ${address}`);
-  }
-  
-  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
-}
 
- openAddSalleModal(filialeId: string): void {
+  openMapsWithName(filialeName: string, address?: string): void {
+    let query = encodeURIComponent(filialeName);
+    if (address) {
+      query += encodeURIComponent(` ${address}`);
+    }
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  }
+
+  openAddSalleModal(filialeId: string): void {
     Swal.fire({
       title: '<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Ajouter une salle</span>',
       html: `
@@ -125,7 +146,7 @@ openMapsWithName(filialeName: string, address?: string): void {
             }
           }
         </style>
-              <div style="text-align: left; width: 100%">
+        <div style="text-align: left; width: 100%">
           <div style="position: relative; margin-bottom: 1.5rem;">
             <label class="swal2-label">Nom de la salle</label>
             <i class="fas fa-door-open" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
@@ -179,11 +200,9 @@ openMapsWithName(filialeName: string, address?: string): void {
     });
   }
 
-
   addSalle(salle: Salle): void {
     this.salleService.add(salle).subscribe({
       next: (newSalle) => {
-        // Ajoute la salle au stockage local
         if (!this.sallesByFiliale[salle.filialeId]) {
           this.sallesByFiliale[salle.filialeId] = [];
         }
@@ -208,22 +227,30 @@ openMapsWithName(filialeName: string, address?: string): void {
       }
     });
   }
+
   animateCounter() {
-  const countUp = new CountUp('counter-number', this.filiales.length, {
-    duration: 1.5,
-    easingFn: (t, b, c, d) => {
-      t /= d/2;
-      if (t < 1) return c/2*t*t*t + b;
-      t -= 2;
-      return c/2*(t*t*t + 2) + b;
+    const counterElement = document.getElementById('counter-number');
+    if (!counterElement) {
+      console.warn('CountUp target element not found');
+      return;
     }
-  });
-  if (!countUp.error) {
-    countUp.start();
-  } else {
-    console.error(countUp.error);
+
+    const countUp = new CountUp('counter-number', this.filiales.length, {
+      duration: 1.5,
+      easingFn: (t, b, c, d) => {
+        t /= d/2;
+        if (t < 1) return c/2*t*t*t + b;
+        t -= 2;
+        return c/2*(t*t*t + 2) + b;
+      }
+    });
+    
+    if (!countUp.error) {
+      countUp.start();
+    } else {
+      console.error(countUp.error);
+    }
   }
-}
 
   openAddFilialeModal(): void {
     Swal.fire({
@@ -272,20 +299,19 @@ openMapsWithName(filialeName: string, address?: string): void {
       }
     });
   }
+
   openSallesDetailsModal(filialeId: string): void {
     this.loading = true;
     
-    // Vérifie d'abord si on a déjà les salles en mémoire
     if (this.sallesByFiliale[filialeId]) {
       this.loading = false;
       this.showSallesDetails(filialeId, this.sallesByFiliale[filialeId]);
       return;
     }
 
-    // Sinon, charge les salles depuis l'API
     this.salleService.getByFilialeId(filialeId).subscribe({
       next: (salles) => {
-        this.sallesByFiliale[filialeId] = salles; // Stocke en mémoire
+        this.sallesByFiliale[filialeId] = salles;
         this.loading = false;
         this.showSallesDetails(filialeId, salles);
       },
@@ -297,7 +323,7 @@ openMapsWithName(filialeName: string, address?: string): void {
     });
   }
 
-private showSallesDetails(filialeId: string, salles: Salle[]): void {
+  private showSallesDetails(filialeId: string, salles: Salle[]): void {
     const filiale = this.filiales.find(f => f.id === filialeId);
     
     Swal.fire({
@@ -359,6 +385,19 @@ private showSallesDetails(filialeId: string, salles: Salle[]): void {
             justify-content: flex-end;
             gap: 8px;
             margin-top: 10px;
+          }
+          .calendar-btn {
+            background-color: #11cdef;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .calendar-btn:hover {
+            background-color: #0da5c0;
           }
           .edit-salle-btn, .delete-salle-btn {
             border: none;
@@ -422,6 +461,9 @@ private showSallesDetails(filialeId: string, salles: Salle[]): void {
                   <i class="fas ${this.getStatusIcon(salle.statut)}"></i> ${salle.statut}
                 </div>
                 <div class="salle-actions">
+                  <button class="calendar-btn" onclick="angularComponentRef.openReservationsCalendar('${salle.id}')">
+                    <i class="fas fa-calendar-alt"></i> Réservations
+                  </button>
                   <button class="edit-salle-btn" onclick="angularComponentRef.editSalle('${filialeId}', '${salle.id}')">
                     <i class="fas fa-edit"></i> Modifier
                   </button>
@@ -443,19 +485,126 @@ private showSallesDetails(filialeId: string, salles: Salle[]): void {
       showConfirmButton: false,
       showCloseButton: true,
       didOpen: () => {
-        // Permet d'accéder aux méthodes du composant depuis le HTML de SweetAlert
         (window as any).angularComponentRef = this;
       }
     });
   }
- deleteSalle(filialeId: string, salleId: string): void {
+
+  openReservationsCalendar(salleId: string): void {
+    this.loading = true;
+    Swal.close();
+    
+    this.reservationService.getBySalleId(salleId).subscribe({
+      next: (reservations) => {
+        this.loading = false;
+        this.showReservationsCalendar(reservations);
+      },
+      error: (err) => {
+        this.loading = false;
+        Swal.fire('Erreur', 'Impossible de charger les réservations', 'error');
+        this.openSallesDetailsModal(salleId);
+      }
+    });
+  }
+
+  private showReservationsCalendar(reservations: any[]): void {
+    const events: EventInput[] = reservations.map(res => ({
+      id: res.id,
+      title: res.motif || 'Réservation',
+      start: res.dateDebut,
+      end: res.dateFin,
+      backgroundColor: this.getReservationStatusColor(res.statut),
+      borderColor: this.getReservationStatusColor(res.statut),
+      extendedProps: {
+        salleId: res.salleId,
+        utilisateurId: res.utilisateurId,
+        motif: res.motif
+      }
+    }));
+
+    Swal.fire({
+      title: '<span style="color: #5e72e4">Calendrier des Réservations</span>',
+      html: `
+        <style>
+          .calendar-container {
+            width: 100%;
+            height: 70vh;
+          }
+          .fc {
+            font-family: inherit;
+          }
+          .fc-toolbar-title {
+            font-size: 1.25rem;
+            color: #5e72e4;
+          }
+          .fc-button {
+            background-color: #5e72e4;
+            border: none;
+            text-transform: capitalize;
+          }
+          .fc-button:hover {
+            background-color: #4a5acf;
+          }
+          .fc-button:active {
+            background-color: #4a5acf;
+          }
+          .fc-event {
+            cursor: pointer;
+          }
+        </style>
+        <div class="calendar-container">
+          <full-calendar [options]="calendarOptions"></full-calendar>
+        </div>
+      `,
+      width: '90%',
+      showConfirmButton: false,
+      showCloseButton: true,
+      didOpen: () => {
+        setTimeout(() => {
+          if (this.calendarComponent && this.calendarComponent.getApi) {
+            const calendarApi = this.calendarComponent.getApi();
+            calendarApi.removeAllEvents();
+            calendarApi.addEventSource(events);
+            
+            calendarApi.on('eventClick', (info) => {
+              this.showReservationDetails(info.event);
+            });
+          }
+        }, 100);
+      }
+    });
+  }
+
+  private showReservationDetails(event: any): void {
+    const reservation = event.extendedProps;
+    Swal.fire({
+      title: 'Détails de la réservation',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Motif:</strong> ${reservation.motif || 'Non spécifié'}</p>
+          <p><strong>Début:</strong> ${event.start.toLocaleString()}</p>
+          <p><strong>Fin:</strong> ${event.end?.toLocaleString() || 'Non spécifié'}</p>
+        </div>
+      `,
+      icon: 'info',
+      confirmButtonColor: '#5e72e4'
+    });
+  }
+
+  private getReservationStatusColor(statut: string): string {
+    switch(statut) {
+      case 'Validée': return '#2dce89';
+      case 'Refusée': return '#f5365c';
+      case 'EnAttente': return '#fb6340';
+      default: return '#5e72e4';
+    }
+  }
+
+  deleteSalle(filialeId: string, salleId: string): void {
     this.salleService.delete(salleId).subscribe({
       next: () => {
-        // Supprime la salle du stockage local
         this.sallesByFiliale[filialeId] = this.sallesByFiliale[filialeId]?.filter(s => s.id !== salleId);
-        
         Swal.fire('Supprimé!', 'La salle a été supprimée.', 'success');
-        // Recharge les détails
         this.showSallesDetails(filialeId, this.sallesByFiliale[filialeId] || []);
       },
       error: (err) => {
@@ -464,7 +613,8 @@ private showSallesDetails(filialeId: string, salles: Salle[]): void {
       }
     });
   }
-   confirmDeleteSalle(filialeId: string, salleId: string, salleNom: string): void {
+
+  confirmDeleteSalle(filialeId: string, salleId: string, salleNom: string): void {
     Swal.fire({
       title: 'Êtes-vous sûr?',
       html: `Vous allez supprimer la salle <b>${salleNom}</b>`,
@@ -480,17 +630,15 @@ private showSallesDetails(filialeId: string, salles: Salle[]): void {
       }
     });
   }
+
   updateSalle(salle: Salle): void {
     this.salleService.update(salle.id, salle).subscribe({
       next: (updatedSalle) => {
-        // Met à jour la salle dans le stockage local
         const index = this.sallesByFiliale[salle.filialeId]?.findIndex(s => s.id === salle.id);
         if (index !== undefined && index !== -1) {
           this.sallesByFiliale[salle.filialeId][index] = updatedSalle;
         }
-        
         Swal.fire('Succès!', 'La salle a été modifiée avec succès.', 'success');
-        // Recharge les détails
         this.showSallesDetails(salle.filialeId, this.sallesByFiliale[salle.filialeId]);
       },
       error: (err) => {
@@ -499,117 +647,118 @@ private showSallesDetails(filialeId: string, salles: Salle[]): void {
       }
     });
   }
-   editSalle(filialeId: string, salleId: string): void {
-  const salle = this.sallesByFiliale[filialeId]?.find(s => s.id === salleId);
-  if (!salle) return;
 
-  Swal.fire({
-    title: '<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Modifier la salle</span>',
-    html: `
-      <style>
-        .edit-salle-container {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 1.5rem;
-          width: 100%;
-        }
-        .form-group-edit {
-          position: relative;
-        }
-        .form-group-edit label {
-          display: block;
-          margin-bottom: 0.5rem;
-          color: #525f7f;
-          font-weight: 500;
-          font-size: 0.95rem;
-        }
-        .form-group-edit input, 
-        .form-group-edit select {
-          width: 100%;
-          padding: 0.75rem 1rem 0.75rem 2.5rem;
-          border: 1px solid #e9ecef;
-          border-radius: 8px;
-          background-color: #f8f9fe;
-          font-size: 0.95rem;
-          color: #2d3748;
-        }
-        .form-group-edit input:focus, 
-        .form-group-edit select:focus {
-          border-color: #5e72e4;
-          box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.15);
-          outline: none;
-        }
-        .form-icon {
-          position: absolute;
-          left: 1rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #5e72e4;
-          font-size: 1.1rem;
-        }
-      </style>
+  editSalle(filialeId: string, salleId: string): void {
+    const salle = this.sallesByFiliale[filialeId]?.find(s => s.id === salleId);
+    if (!salle) return;
 
-      <div class="edit-salle-container">
-        <div class="form-group-edit">
-          <label for="edit-salle-nom">Nom de la salle</label>
-          <div style="position: relative">
-            <i class="fas fa-door-open form-icon"></i>
-            <input id="edit-salle-nom" value="${salle.nom}" placeholder="Nom de la salle">
+    Swal.fire({
+      title: '<span style="color: #5e72e4; font-size: 1.5rem; font-weight: 600">Modifier la salle</span>',
+      html: `
+        <style>
+          .edit-salle-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            width: 100%;
+          }
+          .form-group-edit {
+            position: relative;
+          }
+          .form-group-edit label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #525f7f;
+            font-weight: 500;
+            font-size: 0.95rem;
+          }
+          .form-group-edit input, 
+          .form-group-edit select {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background-color: #f8f9fe;
+            font-size: 0.95rem;
+            color: #2d3748;
+          }
+          .form-group-edit input:focus, 
+          .form-group-edit select:focus {
+            border-color: #5e72e4;
+            box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.15);
+            outline: none;
+          }
+          .form-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #5e72e4;
+            font-size: 1.1rem;
+          }
+        </style>
+
+        <div class="edit-salle-container">
+          <div class="form-group-edit">
+            <label for="edit-salle-nom">Nom de la salle</label>
+            <div style="position: relative">
+              <i class="fas fa-door-open form-icon"></i>
+              <input id="edit-salle-nom" value="${salle.nom}" placeholder="Nom de la salle">
+            </div>
+          </div>
+
+          <div class="form-group-edit">
+            <label for="edit-salle-capacite">Capacité</label>
+            <div style="position: relative">
+              <i class="fas fa-users form-icon"></i>
+              <input type="number" id="edit-salle-capacite" value="${salle.capacite}" min="1" placeholder="Nombre de places">
+            </div>
+          </div>
+
+          <div class="form-group-edit">
+            <label for="edit-salle-statut">Statut</label>
+            <div style="position: relative">
+              <i class="fas fa-info-circle form-icon"></i>
+              <select id="edit-salle-statut">
+                <option value="${StatutSalle.Disponible}" ${salle.statut === StatutSalle.Disponible ? 'selected' : ''}>Disponible</option>
+                <option value="${StatutSalle.Reservée}" ${salle.statut === StatutSalle.Reservée ? 'selected' : ''}>Réservée</option>
+                <option value="${StatutSalle.EnMaintenance}" ${salle.statut === StatutSalle.EnMaintenance ? 'selected' : ''}>En Maintenance</option>
+              </select>
+            </div>
           </div>
         </div>
-
-        <div class="form-group-edit">
-          <label for="edit-salle-capacite">Capacité</label>
-          <div style="position: relative">
-            <i class="fas fa-users form-icon"></i>
-            <input type="number" id="edit-salle-capacite" value="${salle.capacite}" min="1" placeholder="Nombre de places">
-          </div>
-        </div>
-
-        <div class="form-group-edit">
-          <label for="edit-salle-statut">Statut</label>
-          <div style="position: relative">
-            <i class="fas fa-info-circle form-icon"></i>
-            <select id="edit-salle-statut">
-              <option value="${StatutSalle.Disponible}" ${salle.statut === StatutSalle.Disponible ? 'selected' : ''}>Disponible</option>
-              <option value="${StatutSalle.Reservée}" ${salle.statut === StatutSalle.Reservée ? 'selected' : ''}>Réservée</option>
-              <option value="${StatutSalle.EnMaintenance}" ${salle.statut === StatutSalle.EnMaintenance ? 'selected' : ''}>En Maintenance</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: '<i class="fas fa-save"></i> Enregistrer',
-    cancelButtonText: '<i class="fas fa-times"></i> Annuler',
-    confirmButtonColor: '#5e72e4',
-    cancelButtonColor: '#f5365c',
-    focusConfirm: false,
-    width: '600px',
-    preConfirm: () => {
-      return {
-        id: salleId,
-        nom: (document.getElementById('edit-salle-nom') as HTMLInputElement).value,
-        capacite: parseInt((document.getElementById('edit-salle-capacite') as HTMLInputElement).value),
-        statut: (document.getElementById('edit-salle-statut') as HTMLSelectElement).value as StatutSalle,
-        filialeId: filialeId
-      };
-    }
-  }).then((result) => {
-    if (result.isConfirmed && result.value) {
-      this.updateSalle(result.value);
-    }
-  });
-}
-
-private getStatusIcon(statut: StatutSalle): string {
-  switch(statut) {
-    case StatutSalle.Disponible: return 'fa-check-circle';
-    case StatutSalle.Reservée: return 'fa-calendar-check';
-    case StatutSalle.EnMaintenance: return 'fa-tools';
-    default: return 'fa-info-circle';
+      `,
+      showCancelButton: true,
+      confirmButtonText: '<i class="fas fa-save"></i> Enregistrer',
+      cancelButtonText: '<i class="fas fa-times"></i> Annuler',
+      confirmButtonColor: '#5e72e4',
+      cancelButtonColor: '#f5365c',
+      focusConfirm: false,
+      width: '600px',
+      preConfirm: () => {
+        return {
+          id: salleId,
+          nom: (document.getElementById('edit-salle-nom') as HTMLInputElement).value,
+          capacite: parseInt((document.getElementById('edit-salle-capacite') as HTMLInputElement).value),
+          statut: (document.getElementById('edit-salle-statut') as HTMLSelectElement).value as StatutSalle,
+          filialeId: filialeId
+        };
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        this.updateSalle(result.value);
+      }
+    });
   }
-}
+
+  private getStatusIcon(statut: StatutSalle): string {
+    switch(statut) {
+      case StatutSalle.Disponible: return 'fa-check-circle';
+      case StatutSalle.Reservée: return 'fa-calendar-check';
+      case StatutSalle.EnMaintenance: return 'fa-tools';
+      default: return 'fa-info-circle';
+    }
+  }
 
   openEditModal(filiale: Filiale): void {
     Swal.fire({
