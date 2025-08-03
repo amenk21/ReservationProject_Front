@@ -52,7 +52,18 @@ export class FilialeListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadFiliales();
+    this.loadAllReservations(); 
   }
+  loadAllReservations(): void {
+  this.reservationService.getAll().subscribe({
+    next: (reservations) => {
+      this.showReservationsCalendar(reservations);
+    },
+    error: (err) => {
+      console.error("Erreur lors du chargement des réservations", err);
+    }
+  });
+}
 
   loadFiliales(): void {
     this.loading = true;
