@@ -508,88 +508,81 @@ export class FilialeListComponent implements OnInit {
   }
 
   private showReservationsCalendar(reservations: any[]): void {
-    const events: EventInput[] = reservations.map(res => ({
-      id: res.id,
-      title: res.motif || 'Réservation',
-      start: res.dateDebut,
-      end: res.dateFin,
-      backgroundColor: this.getReservationStatusColor(res.statut),
-      borderColor: this.getReservationStatusColor(res.statut),
-      extendedProps: {
-        salleId: res.salleId,
-        utilisateurId: res.utilisateurId,
-        motif: res.motif
-      }
-    }));
+  const events: EventInput[] = reservations.map(res => ({
+    id: res.id,
+    title: res.motif || 'Réservation',
+    start: res.dateDebut,
+    end: res.dateFin,
+    backgroundColor: this.getReservationStatusColor(res.statut),
+    borderColor: this.getReservationStatusColor(res.statut),
+    extendedProps: {
+      salleId: res.salleId,
+      utilisateurId: res.utilisateurId,
+      motif: res.motif
+    }
+  }));
 
-    Swal.fire({
-      title: '<span style="color: #5e72e4">Calendrier des Réservations</span>',
-      html: `
-        <style>
-          .calendar-container {
-            width: 100%;
-            height: 70vh;
-          }
-          .fc {
-            font-family: inherit;
-          }
-          .fc-toolbar-title {
-            font-size: 1.25rem;
-            color: #5e72e4;
-          }
-          .fc-button {
-            background-color: #5e72e4;
-            border: none;
-            text-transform: capitalize;
-          }
-          .fc-button:hover {
-            background-color: #4a5acf;
-          }
-          .fc-button:active {
-            background-color: #4a5acf;
-          }
-          .fc-event {
-            cursor: pointer;
-          }
-        </style>
-        <div class="calendar-container">
-          <full-calendar [options]="calendarOptions"></full-calendar>
-        </div>
-      `,
-      width: '90%',
-      showConfirmButton: false,
-      showCloseButton: true,
-      didOpen: () => {
-        setTimeout(() => {
-          if (this.calendarComponent && this.calendarComponent.getApi) {
-            const calendarApi = this.calendarComponent.getApi();
-            calendarApi.removeAllEvents();
-            calendarApi.addEventSource(events);
-            
-            calendarApi.on('eventClick', (info) => {
-              this.showReservationDetails(info.event);
-            });
-          }
-        }, 100);
-      }
-    });
-  }
+  // Update FullCalendar component directly
+  setTimeout(() => {
+    if (this.calendarComponent && this.calendarComponent.getApi) {
+      const calendarApi = this.calendarComponent.getApi();
+      calendarApi.removeAllEvents();
+      calendarApi.addEventSource(events);
+      
+      calendarApi.on('eventClick', (info) => {
+        this.showReservationDetails(info.event);
+      });
+
+      calendarApi.gotoDate(events[0]?.start || new Date());
+    }
+  }, 100);
+}
+
 
   private showReservationDetails(event: any): void {
-    const reservation = event.extendedProps;
-    Swal.fire({
-      title: 'Détails de la réservation',
-      html: `
-        <div style="text-align: left;">
-          <p><strong>Motif:</strong> ${reservation.motif || 'Non spécifié'}</p>
-          <p><strong>Début:</strong> ${event.start.toLocaleString()}</p>
-          <p><strong>Fin:</strong> ${event.end?.toLocaleString() || 'Non spécifié'}</p>
-        </div>
-      `,
-      icon: 'info',
-      confirmButtonColor: '#5e72e4'
-    });
-  }
+  const reservation = event.extendedProps;
+  
+  Swal.fire({
+    title: 'Détails de la réservation',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>Motif:</strong> ${reservation.motif || 'Non spécifié'}</p>
+        <p><strong>Début:</strong> ${event.start.toLocaleString()}</p>
+        <p><strong>Fin:</strong> ${event.end?.toLocaleString() || 'Non spécifié'}</p>
+        <label for="statut-select"><strong>Statut:</strong></label>
+        <select id="statut-select" class="swal2-select" style="margin-top: 5px;">
+          <option value="EnAttente" ${event.backgroundColor === '#fb6340' ? 'selected' : ''}>En Attente</option>
+          <option value="Validée" ${event.backgroundColor === '#2dce89' ? 'selected' : ''}>Validée</option>
+          <option value="Refusée" ${event.backgroundColor === '#f5365c' ? 'selected' : ''}>Refusée</option>
+        </select>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Mettre à jour',
+    cancelButtonText: 'Fermer',
+    preConfirm: () => {
+      const newStatus = (document.getElementById('statut-select') as HTMLSelectElement).value as 'EnAttente' | 'Validée' | 'Refusée';
+      return {
+        reservationId: event.id,
+        nouveauStatut: newStatus
+      };
+    }
+  }).then((result) => {
+    if (result.isConfirmed && result.value) {
+      this.reservationService.changeStatut(result.value).subscribe({
+        next: (updated) => {
+          Swal.fire('Succès', `Statut mis à jour à "${updated.statut}"`, 'success');
+          // Reload reservations to reflect update
+          this.openReservationsCalendar(updated.salleId);
+        },
+        error: (err) => {
+          Swal.fire('Erreur', "Échec de la mise à jour du statut.", 'error');
+          console.error(err);
+        }
+      });
+    }
+  });
+}
 
   private getReservationStatusColor(statut: string): string {
     switch(statut) {
