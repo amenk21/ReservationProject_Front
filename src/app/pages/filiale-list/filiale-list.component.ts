@@ -38,7 +38,8 @@ export class FilialeListComponent implements OnInit {
     eventTextColor: '#fff',
     editable: false,
     selectable: true,
-    locale: 'fr'
+    locale: 'fr',
+    displayEventTime: false,
   };
 
   constructor(
@@ -522,7 +523,7 @@ export class FilialeListComponent implements OnInit {
 
   return {
     id: res.id,
-    title: `${res.motif || 'Réservation'} (${startTime} - ${endTime})`,
+    title: `${startTime} - ${endTime} ${res.motif || 'Réservation'}`,
     start: res.dateDebut,
     end: res.dateFin,
     backgroundColor: this.getReservationStatusColor(res.statut),
