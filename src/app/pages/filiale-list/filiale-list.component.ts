@@ -605,7 +605,8 @@ export class FilialeListComponent implements OnInit {
           this.reservationService.changeStatut(result.value).subscribe({
             next: (updated) => {
               Swal.fire('Succès', `Statut mis à jour à "${updated.statut}"`, 'success');
-              this.openReservationsCalendar(updated.salleId);
+              this.loadAllReservations();
+
             },
             error: (err) => {
               Swal.fire('Erreur', "Échec de la mise à jour du statut.", 'error');
