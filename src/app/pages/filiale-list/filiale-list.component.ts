@@ -569,48 +569,58 @@ export class FilialeListComponent implements OnInit {
 
   private showReservationDetails(event: any): void {
   const reservation = event.extendedProps;
-  
-  Swal.fire({
-    title: 'Détails de la réservation',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Motif:</strong> ${reservation.motif || 'Non spécifié'}</p>
-        <p><strong>Début:</strong> ${event.start.toLocaleString()}</p>
-        <p><strong>Fin:</strong> ${event.end?.toLocaleString() || 'Non spécifié'}</p>
-        <label for="statut-select"><strong>Statut:</strong></label>
-        <select id="statut-select" class="swal2-select" style="margin-top: 5px;">
-          <option value="EnAttente" ${event.backgroundColor === '#fcd34d' ? 'selected' : ''}>En Attente</option>
-          <option value="Validée" ${event.backgroundColor === '#2dce89' ? 'selected' : ''}>Validée</option>
-          <option value="Refusée" ${event.backgroundColor === '#f5365c' ? 'selected' : ''}>Refusée</option>
-        </select>
-      </div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Mettre à jour',
-    cancelButtonText: 'Fermer',
-    preConfirm: () => {
-      const newStatus = (document.getElementById('statut-select') as HTMLSelectElement).value as 'EnAttente' | 'Validée' | 'Refusée';
-      return {
-        reservationId: event.id,
-        nouveauStatut: newStatus
-      };
-    }
-  }).then((result) => {
-    if (result.isConfirmed && result.value) {
-      this.reservationService.changeStatut(result.value).subscribe({
-        next: (updated) => {
-          Swal.fire('Succès', `Statut mis à jour à "${updated.statut}"`, 'success');
-          // Reload reservations to reflect update
-          this.openReservationsCalendar(updated.salleId);
-        },
-        error: (err) => {
-          Swal.fire('Erreur', "Échec de la mise à jour du statut.", 'error');
-          console.error(err);
+
+  this.salleService.getById(reservation.salleId).subscribe({
+    next: (salle) => {
+      const salleName = salle?.nom || 'Salle inconnue';
+
+      Swal.fire({
+        title: `Détails de la réservation`,
+        html: `
+          <div style="text-align: left;">
+            <p><strong>Salle:</strong> ${salleName}</p>
+            <p><strong>Motif:</strong> ${reservation.motif || 'Non spécifié'}</p>
+            <p><strong>Début:</strong> ${event.start.toLocaleString()}</p>
+            <p><strong>Fin:</strong> ${event.end?.toLocaleString() || 'Non spécifié'}</p>
+            <label for="statut-select"><strong>Statut:</strong></label>
+            <select id="statut-select" class="swal2-select" style="margin-top: 5px;">
+              <option value="EnAttente" ${event.backgroundColor === '#fcd34d' ? 'selected' : ''}>En Attente</option>
+              <option value="Validée" ${event.backgroundColor === '#2dce89' ? 'selected' : ''}>Validée</option>
+              <option value="Refusée" ${event.backgroundColor === '#f5365c' ? 'selected' : ''}>Refusée</option>
+            </select>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Mettre à jour',
+        cancelButtonText: 'Fermer',
+        preConfirm: () => {
+          const newStatus = (document.getElementById('statut-select') as HTMLSelectElement).value as 'EnAttente' | 'Validée' | 'Refusée';
+          return {
+            reservationId: event.id,
+            nouveauStatut: newStatus
+          };
+        }
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          this.reservationService.changeStatut(result.value).subscribe({
+            next: (updated) => {
+              Swal.fire('Succès', `Statut mis à jour à "${updated.statut}"`, 'success');
+              this.openReservationsCalendar(updated.salleId);
+            },
+            error: (err) => {
+              Swal.fire('Erreur', "Échec de la mise à jour du statut.", 'error');
+              console.error(err);
+            }
+          });
         }
       });
+    },
+    error: (err) => {
+      console.error("Erreur lors du chargement du nom de la salle", err);
     }
   });
 }
+
 
   private getReservationStatusColor(statut: string): string {
     switch(statut) {
