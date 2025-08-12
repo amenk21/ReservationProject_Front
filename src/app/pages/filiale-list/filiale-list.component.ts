@@ -3,15 +3,17 @@ import { FilialeService, Filiale } from 'src/app/services/filiale.service';
 import { SalleService, Salle, StatutSalle } from 'src/app/services/salle.service';
 import { ReservationService } from 'src/app/services/reservation.service';
 import { UtilisateurService } from 'src/app/services/utilisateur.service';
+import { Calendar } from '@fullcalendar/core';
 
 
 import Swal from 'sweetalert2';
 import { CountUp } from 'countup.js';
 import { FullCalendarComponent } from '@fullcalendar/angular';
-import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import { CalendarOptions, EventClickArg, EventInput } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
 
 @Component({
   selector: 'app-filiale-list',
@@ -19,29 +21,53 @@ import interactionPlugin from '@fullcalendar/interaction';
   styleUrls: ['./filiale-list.component.scss']
 })
 export class FilialeListComponent implements OnInit {
-  @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
   filiales: Filiale[] = [];
   loading = false;
   error: string | null = null;
   sallesByFiliale: { [key: string]: Salle[] } = {};
 
   calendarOptions: CalendarOptions = {
-    initialView: 'dayGridMonth',
-    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,timeGridWeek,timeGridDay'
-    },
-    events: [],
-    eventColor: '#5e72e4',
-    eventTextColor: '#fff',
-    editable: false,
-    selectable: true,
-    locale: 'fr',
-    displayEventTime: false,
-  };
-
+  initialView: 'dayGridMonth',
+  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek,timeGridDay listWeek'
+  },
+  events: [],
+  nowIndicator: true,
+  editable: true,
+  selectable: true,
+  selectMirror: true,
+  dayMaxEvents: true,
+  locale: 'fr',
+  firstDay: 1, // Lundi comme premier jour
+  buttonText: {
+    today: 'Aujourd\'hui',
+    month: 'Mois',
+    week: 'Semaine',
+    day: 'Jour',
+    list: 'Liste'
+  },
+  // Nouveaux styles et apparence
+  eventColor: '#5e72e4',
+  eventTextColor: '#ffffff',
+  eventBorderColor: '#4a5acf',
+  eventDisplay: 'block',
+  eventTimeFormat: {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  },
+  // Amélioration de l'aspect visuel
+  dayHeaderFormat: { weekday: 'short', day: 'numeric' },
+  height: 'auto',
+  contentHeight: 'auto',
+  aspectRatio: 1.8,
+  // Gestion des clics
+  dateClick: this.handleDateClick.bind(this),
+  eventClick: this.handleEventClick.bind(this)
+};
   constructor(
     private filialeService: FilialeService,
     private salleService: SalleService,
@@ -49,6 +75,14 @@ export class FilialeListComponent implements OnInit {
     private utilisateurService: UtilisateurService
 
   ) {}
+  handleDateClick(arg: DateClickArg) {
+  // Ouvrir un modal pour créer une réservation
+  this.openReservationForm(null, arg.dateStr);
+}
+
+handleEventClick(clickInfo: EventClickArg) {
+  // Afficher les détails de la réservation
+}
 
   ngOnInit(): void {
     this.loadFiliales();
@@ -389,14 +423,7 @@ export class FilialeListComponent implements OnInit {
             font-size: 0.8rem;
             font-weight: 600;
           }
-          .salle-status {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-top: 5px;
-          }
+          
           .salle-actions {
             display: flex;
             justify-content: flex-end;
@@ -438,18 +465,7 @@ export class FilialeListComponent implements OnInit {
           .delete-salle-btn:hover {
             background-color: #e03150;
           }
-          .status-disponible {
-            background: #2dce891a;
-            color: #2dce89;
-          }
-          .status-reservee {
-            background: #fb63401a;
-            color: #fb6340;
-          }
-          .status-maintenance {
-            background: #f5365c1a;
-            color: #f5365c;
-          }
+          
           .no-salles {
             text-align: center;
             padding: 20px;
@@ -474,9 +490,7 @@ export class FilialeListComponent implements OnInit {
                     <i class="fas fa-users"></i> ${salle.capacite} places
                   </div>
                 </div>
-                <div class="salle-status status-${salle.statut.toLowerCase().replace('é', 'e')}">
-                  <i class="fas ${this.getStatusIcon(salle.statut)}"></i> ${salle.statut}
-                </div>
+               
                 <div class="salle-actions">
                   <button class="calendar-btn" onclick="angularComponentRef.openReservationsCalendar('${salle.id}')">
                     <i class="fas fa-calendar-alt"></i> Réservations
@@ -509,65 +523,83 @@ export class FilialeListComponent implements OnInit {
       }
     });
   }
-
-  openReservationsCalendar(salleId: string): void {
-    this.loading = true;
-    Swal.close();
-    
-    this.reservationService.getBySalleId(salleId).subscribe({
-      next: (reservations) => {
-        this.loading = false;
-        this.showReservationsCalendar(reservations);
-      },
-      error: (err) => {
-        this.loading = false;
-        Swal.fire('Erreur', 'Impossible de charger les réservations', 'error');
-        this.openSallesDetailsModal(salleId);
-      }
-    });
-  }
-
-  private showReservationsCalendar(reservations: any[]): void {
-  const events: EventInput[] = reservations.map(res => {
-  const startTime = new Date(res.dateDebut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const endTime = new Date(res.dateFin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  return {
-    id: res.id,
-    title: `${startTime} - ${endTime} ${res.motif || 'Réservation'}`,
-    start: res.dateDebut,
-    end: res.dateFin,
-    backgroundColor: this.getReservationStatusColor(res.statut),
-    borderColor: this.getReservationStatusColor(res.statut),
-    extendedProps: {
-      salleId: res.salleId,
-      utilisateurId: res.utilisateurId,
-      motif: res.motif,
-      dateDebut: res.dateDebut,
-      dateFin: res.dateFin
+openReservationsCalendar(salleId: string): void {
+  this.loading = true;
+  Swal.close();
+  
+  this.reservationService.getBySalleId(salleId).subscribe({
+    next: (reservations) => {
+      this.loading = false;
+      this.showCalendarInModal(reservations);
+    },
+    error: (err) => {
+      this.loading = false;
+      Swal.fire('Erreur', 'Impossible de charger les réservations', 'error');
+      this.openSallesDetailsModal(salleId);
     }
-  };
-});
-
-
-  // Update FullCalendar component directly
-  setTimeout(() => {
-    if (this.calendarComponent && this.calendarComponent.getApi) {
-      const calendarApi = this.calendarComponent.getApi();
-      calendarApi.removeAllEvents();
-      calendarApi.addEventSource(events);
-      
-      calendarApi.on('eventClick', (info) => {
-        this.showReservationDetails(info.event);
-      });
-
-      calendarApi.gotoDate(events[0]?.start || new Date());
-    }
-  }, 100);
+  });
 }
+private showCalendarInModal(reservations: any[]): void {
+  const events: EventInput[] = reservations.map(res => {
+    const startTime = new Date(res.dateDebut);
+    const endTime = new Date(res.dateFin);
+    const timeStr = `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    
+    return {
+      id: res.id,
+      title: `${timeStr} ${res.motif || 'Réservation'}`,
+      start: res.dateDebut,
+      end: res.dateFin,
+      backgroundColor: this.getReservationStatusColor(res.statut),
+      borderColor: this.getReservationStatusBorderColor(res.statut),
+      textColor: '#ffffff',
+      extendedProps: {
+        salleId: res.salleId,
+        utilisateurId: res.utilisateurId,
+        motif: res.motif,
+        statut: res.statut
+      }
+    };
+  });
 
+  // Créer un conteneur pour le calendrier
+  const calendarContainer = document.createElement('div');
+  calendarContainer.id = 'modal-calendar-container';
+  calendarContainer.style.height = '70vh';
+  calendarContainer.style.width = '100%';
 
-  private showReservationDetails(event: any): void {
+  // Stocker la référence de la modal
+  let calendarModal: any;
+
+  calendarModal = Swal.fire({
+    title: 'Calendrier des réservations',
+    html: calendarContainer,
+    width: '90%',
+    showConfirmButton: false,
+    showCloseButton: true,
+    didOpen: () => {
+      // Initialiser le calendrier dans la modal
+      const calendarEl = document.getElementById('modal-calendar-container');
+      
+      if (calendarEl) {
+        const calendarApi = new Calendar(calendarEl, {
+          ...this.calendarOptions,
+          events: events,
+          eventClick: (info) => {
+            this.showReservationDetailsInModal(info.event, calendarModal);
+          },
+          dateClick: (arg) => {
+            calendarModal.close();
+            this.openReservationForm(null, arg.dateStr);
+          }
+        });
+        
+        calendarApi.render();
+      }
+    }
+  });
+}
+private showReservationDetailsInModal(event: any, calendarModal: any): void {
   const reservation = event.extendedProps;
 
   this.salleService.getById(reservation.salleId).subscribe({
@@ -604,24 +636,73 @@ export class FilialeListComponent implements OnInit {
         if (result.isConfirmed && result.value) {
           this.reservationService.changeStatut(result.value).subscribe({
             next: (updated) => {
-              Swal.fire('Succès', `Statut mis à jour à "${updated.statut}"`, 'success');
-              this.loadAllReservations();
-
+              Swal.fire({
+                title: 'Succès',
+                text: `Statut mis à jour à "${updated.statut}"`,
+                icon: 'success',
+                timer: 2000
+              }).then(() => {
+                // Recharger les réservations et réafficher le calendrier
+                this.openReservationsCalendar(reservation.salleId);
+              });
             },
             error: (err) => {
               Swal.fire('Erreur', "Échec de la mise à jour du statut.", 'error');
               console.error(err);
             }
           });
+        } else {
+          // Si l'utilisateur annule, on rouvre le calendrier
+          calendarModal.fire();
         }
       });
     },
     error: (err) => {
       console.error("Erreur lors du chargement du nom de la salle", err);
+      // En cas d'erreur, on rouvre le calendrier
+      calendarModal.fire();
     }
   });
 }
 
+ private showReservationsCalendar(reservations: any[]): void {
+  const events: EventInput[] = reservations.map(res => {
+    const startTime = new Date(res.dateDebut);
+    const endTime = new Date(res.dateFin);
+    const timeStr = `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    
+    return {
+      id: res.id,
+      title: `${timeStr} ${res.motif || 'Réservation'}`,
+      start: res.dateDebut,
+      end: res.dateFin,
+      backgroundColor: this.getReservationStatusColor(res.statut),
+      borderColor: this.getReservationStatusBorderColor(res.statut),
+      textColor: '#ffffff',
+      extendedProps: {
+        salleId: res.salleId,
+        utilisateurId: res.utilisateurId,
+        motif: res.motif,
+        statut: res.statut
+      }
+    };
+  });
+
+  setTimeout(() => {
+    
+  });
+}
+
+private getReservationStatusBorderColor(statut: string): string {
+  switch(statut) {
+    case 'Validée': return '#28a774';
+    case 'Refusée': return '#d92550';
+    case 'EnAttente': return '#f6ad55';
+    default: return '#4a5acf';
+  }
+}
+
+ 
 
   private getReservationStatusColor(statut: string): string {
     switch(statut) {
@@ -868,7 +949,7 @@ export class FilialeListComponent implements OnInit {
       }
     });
   }
-openReservationForm(salleId: string): void {
+openReservationForm(salleId: string, dateStr: string): void {
   const currentUser = this.utilisateurService.getCurrentUser();
 
   if (!currentUser || !currentUser.id) {

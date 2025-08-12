@@ -69,16 +69,10 @@
     </div>
   </div>
 
-  <!-- États de chargement -->
-  <div *ngIf="loading" class="loading-state">
-    <i class="fas fa-spinner fa-spin"></i>
-    <p>Chargement des filiales...</p>
-  </div>
+ 
   
   <div *ngIf="error" class="error-state">
     {{ error }}
   </div>
 </div>
 
-<!-- FullCalendar component -->
-<full-calendar #calendar [options]="calendarOptions"></full-calendar>

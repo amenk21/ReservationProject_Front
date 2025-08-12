@@ -436,3 +436,187 @@ $text-medium: #4a5568;
     color: #525f7f;
   }
 }
+/* Style global du calendrier */
+.calendar-container {
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 20px 0;
+}
+
+.custom-calendar {
+  /* En-tête */
+  .fc-toolbar {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fe;
+    border-radius: 8px 8px 0 0;
+    
+    .fc-toolbar-title {
+      font-size: 1.3rem;
+      color: #2d3748;
+      font-weight: 600;
+    }
+    
+    .fc-button {
+      background: #5e72e4;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      text-transform: capitalize;
+      box-shadow: none;
+      transition: all 0.2s;
+      
+      &:hover {
+        background: #4a5acf;
+        transform: translateY(-1px);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+    
+    .fc-button-primary:not(:disabled).fc-button-active {
+      background: #3a4ab9;
+    }
+  }
+  
+  /* En-tête des jours */
+  .fc-col-header-cell {
+    background: #f8f9fe;
+    padding: 10px 0;
+    
+    .fc-col-header-cell-cushion {
+      color: #5e72e4;
+      font-weight: 500;
+      text-decoration: none;
+    }
+  }
+  
+  /* Cellules des jours */
+  .fc-daygrid-day {
+    border-color: #edf2f7 !important;
+    
+    &.fc-day-today {
+      background-color: #f0f5ff !important;
+      
+      .fc-daygrid-day-number {
+        color: #5e72e4;
+        font-weight: bold;
+      }
+    }
+    
+    .fc-daygrid-day-number {
+      font-size: 1.1em;
+      font-weight: 500;
+      padding: 8px;
+    }
+  }
+  
+  /* Événements */
+  .fc-event {
+    border-radius: 6px;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    
+    &:hover {
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+    
+    .fc-event-title {
+      font-weight: 500;
+    }
+  }
+  
+  /* Vue semaine/jour */
+  .fc-timegrid-slot {
+    height: 2.5em !important;
+  }
+  
+  .fc-timegrid-event {
+    border-radius: 8px;
+  }
+  
+  /* Indicateur "now" */
+  .fc-timegrid-now-indicator-arrow {
+    border-color: #f5365c;
+  }
+  
+  .fc-timegrid-now-indicator-line {
+    border-color: #f5365c;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .custom-calendar {
+    .fc-toolbar {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .fc-header-toolbar {
+      gap: 5px;
+    }
+  }
+}
+/* Style pour le calendrier dans la modal */
+#modal-calendar-container {
+  .fc {
+    font-family: inherit;
+    
+    .fc-toolbar {
+      padding: 10px;
+      background: #f8f9fe;
+      border-radius: 8px 8px 0 0;
+      
+      .fc-toolbar-title {
+        font-size: 1.2rem;
+        color: #2d3748;
+      }
+      
+      .fc-button {
+        background: #5e72e4;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        text-transform: capitalize;
+        
+        &:hover {
+          background: #4a5acf;
+        }
+      }
+    }
+    
+    .fc-daygrid-event {
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.85rem;
+    }
+    
+    .fc-day-today {
+      background-color: #f0f5ff !important;
+    }
+  }
+}
+
+/* Ajustements pour la modal */
+.swal2-popup {
+  .swal2-close {
+    font-size: 1.5rem;
+    color: #5e72e4;
+  }
+  
+  .swal2-title {
+    color: #5e72e4;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+}
