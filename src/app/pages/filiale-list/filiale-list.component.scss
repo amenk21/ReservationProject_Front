@@ -620,3 +620,215 @@ $text-medium: #4a5568;
     margin-bottom: 1rem;
   }
 }
+/* Style global du calendrier */
+.fc {
+  font-family: 'Poppins', sans-serif;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  
+  /* En-tête */
+  .fc-toolbar {
+    background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 0;
+    margin-bottom: 0;
+    
+    .fc-toolbar-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    
+    .fc-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      text-transform: capitalize;
+      font-weight: 500;
+      transition: all 0.3s;
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+      }
+      
+      &:active, &.fc-button-active {
+        background: rgba(255, 255, 255, 0.4);
+      }
+      
+      .fc-icon {
+        font-size: 1.2rem;
+      }
+    }
+  }
+  
+  /* En-tête des jours */
+  .fc-col-header {
+    background: #f8f9fe;
+    
+    .fc-col-header-cell {
+      padding: 0.75rem 0;
+      border-color: #e9ecef;
+      
+      .fc-col-header-cell-cushion {
+        color: #5e72e4;
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+    }
+  }
+  
+  /* Cellules des jours */
+  .fc-daygrid-day {
+    border-color: #e9ecef;
+    
+    &.fc-day-today {
+      background-color: #f0f5ff !important;
+      
+      .fc-daygrid-day-number {
+        color: #5e72e4;
+        font-weight: bold;
+      }
+    }
+    
+    .fc-daygrid-day-number {
+      font-size: 1rem;
+      font-weight: 500;
+      padding: 8px;
+      color: #525f7f;
+    }
+    
+    .fc-daygrid-day-frame {
+      min-height: 80px;
+    }
+  }
+  
+  /* Événements */
+  .fc-event {
+    border-radius: 6px;
+    border: none;
+    padding: 4px 8px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+    margin: 2px;
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    .fc-event-title {
+      font-weight: 500;
+      padding: 2px 4px;
+    }
+    
+    &.fc-event-past {
+      opacity: 0.7;
+    }
+  }
+  
+  /* Vue semaine/jour */
+  .fc-timegrid-slot {
+    height: 2.5em !important;
+  }
+  
+  .fc-timegrid-event {
+    border-radius: 8px;
+  }
+  
+  /* Indicateur "now" */
+  .fc-timegrid-now-indicator-arrow {
+    border-color: #f5365c;
+  }
+  
+  .fc-timegrid-now-indicator-line {
+    border-color: #f5365c;
+  }
+  
+  /* Liste des événements */
+  .fc-list {
+    border-radius: 0 0 12px 12px;
+    
+    .fc-list-day-cushion {
+      background-color: #f8f9fe;
+    }
+    
+    .fc-list-event {
+      &:hover td {
+        background-color: #f0f5ff;
+      }
+    }
+  }
+}
+
+/* Style pour le calendrier dans la modal */
+#modal-calendar-container {
+  .fc {
+    border-radius: 0;
+    box-shadow: none;
+    
+    .fc-toolbar {
+      border-radius: 0;
+    }
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .fc {
+    .fc-toolbar {
+      flex-direction: column;
+      gap: 10px;
+      
+      .fc-toolbar-chunk {
+        width: 100%;
+        text-align: center;
+        
+        &:nth-child(1) {
+          order: 2;
+        }
+        
+        &:nth-child(2) {
+          order: 1;
+        }
+        
+        &:nth-child(3) {
+          order: 3;
+        }
+      }
+    }
+    
+    .fc-header-toolbar {
+      gap: 5px;
+    }
+  }
+}
+/* Style pour la modal du calendrier */
+/* Style pour la modal du calendrier */
+.calendar-modal-popup {
+  border-radius: 12px;
+  overflow: hidden;
+  
+  .swal2-title {
+    color: #5e72e4;
+    font-size: 1.5rem;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 0;
+  }
+  
+  .swal2-close {
+    color: #5e72e4;
+    font-size: 1.5rem;
+    transition: all 0.3s;
+    
+    &:hover {
+      color: #4a5acf;
+      transform: rotate(90deg);
+    }
+  }
+}

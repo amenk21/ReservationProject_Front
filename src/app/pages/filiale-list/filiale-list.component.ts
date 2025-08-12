@@ -26,7 +26,7 @@ export class FilialeListComponent implements OnInit {
   error: string | null = null;
   sallesByFiliale: { [key: string]: Salle[] } = {};
 
-  calendarOptions: CalendarOptions = {
+calendarOptions: CalendarOptions = {
   initialView: 'dayGridMonth',
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin],
   headerToolbar: {
@@ -49,7 +49,15 @@ export class FilialeListComponent implements OnInit {
     day: 'Jour',
     list: 'Liste'
   },
-  // Nouveaux styles et apparence
+  // Styles modernes
+  themeSystem: 'bootstrap5',
+  buttonIcons: {
+    prev: 'chevron-left',
+    next: 'chevron-right',
+    prevYear: 'chevrons-left',
+    nextYear: 'chevrons-right'
+  },
+  // Apparence des événements
   eventColor: '#5e72e4',
   eventTextColor: '#ffffff',
   eventBorderColor: '#4a5acf',
@@ -66,7 +74,11 @@ export class FilialeListComponent implements OnInit {
   aspectRatio: 1.8,
   // Gestion des clics
   dateClick: this.handleDateClick.bind(this),
-  eventClick: this.handleEventClick.bind(this)
+  eventClick: this.handleEventClick.bind(this),
+  // Styles supplémentaires
+  dayHeaderClassNames: 'fc-day-header-custom',
+  dayCellClassNames: 'fc-day-cell-custom',
+  eventClassNames: 'fc-event-custom'
 };
   constructor(
     private filialeService: FilialeService,
@@ -553,6 +565,7 @@ private showCalendarInModal(reservations: any[]): void {
       backgroundColor: this.getReservationStatusColor(res.statut),
       borderColor: this.getReservationStatusBorderColor(res.statut),
       textColor: '#ffffff',
+      classNames: ['fc-event-custom'],
       extendedProps: {
         salleId: res.salleId,
         utilisateurId: res.utilisateurId,
@@ -572,9 +585,14 @@ private showCalendarInModal(reservations: any[]): void {
   let calendarModal: any;
 
   calendarModal = Swal.fire({
-    title: 'Calendrier des réservations',
+    title: '<span style="color: #5e72e4; font-weight: 600">Calendrier des réservations</span>',
     html: calendarContainer,
     width: '90%',
+    customClass: {
+      popup: 'calendar-modal-popup',
+      title: 'calendar-modal-title'
+      // 'header' n'est pas une propriété valide dans SweetAlertCustomClass
+    },
     showConfirmButton: false,
     showCloseButton: true,
     didOpen: () => {
@@ -693,26 +711,27 @@ private showReservationDetailsInModal(event: any, calendarModal: any): void {
   });
 }
 
-private getReservationStatusBorderColor(statut: string): string {
-  switch(statut) {
-    case 'Validée': return '#28a774';
-    case 'Refusée': return '#d92550';
-    case 'EnAttente': return '#f6ad55';
-    default: return '#4a5acf';
-  }
+private getReservationStatusColor(statut: string): string {
+  const colors = {
+    'Validée': '#2dce89',
+    'Refusée': '#f5365c',
+    'EnAttente': '#f6ad55',
+    'default': '#5e72e4'
+  };
+  
+  return colors[statut] || colors['default'];
 }
 
- 
-
-  private getReservationStatusColor(statut: string): string {
-    switch(statut) {
-      case 'Validée': return '#2dce89';
-      case 'Refusée': return '#f5365c';
-      case 'EnAttente': return '#fcd34d';
-      default: return '#5e72e4';
-    }
-  }
-
+private getReservationStatusBorderColor(statut: string): string {
+  const colors = {
+    'Validée': '#28a774',
+    'Refusée': '#d92550',
+    'EnAttente': '#e69a3e',
+    'default': '#4a5acf'
+  };
+  
+  return colors[statut] || colors['default'];
+}
   deleteSalle(filialeId: string, salleId: string): void {
     this.salleService.delete(salleId).subscribe({
       next: () => {
