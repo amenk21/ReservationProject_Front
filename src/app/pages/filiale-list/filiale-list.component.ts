@@ -67,13 +67,14 @@ calendarOptions: CalendarOptions = {
     minute: '2-digit',
     hour12: false
   },
+  
+  
   // Amélioration de l'aspect visuel
   dayHeaderFormat: { weekday: 'short', day: 'numeric' },
   height: 'auto',
   contentHeight: 'auto',
   aspectRatio: 1.8,
   // Gestion des clics
-  dateClick: this.handleDateClick.bind(this),
   eventClick: this.handleEventClick.bind(this),
   // Styles supplémentaires
   dayHeaderClassNames: 'fc-day-header-custom',
@@ -87,9 +88,295 @@ calendarOptions: CalendarOptions = {
     private utilisateurService: UtilisateurService
 
   ) {}
-  handleDateClick(arg: DateClickArg) {
-  // Ouvrir un modal pour créer une réservation
-  this.openReservationForm(null, arg.dateStr);
+  openReservationForm(salleId: string): void {
+  const currentUser = this.utilisateurService.getCurrentUser();
+
+  if (!currentUser || !currentUser.id) {
+    Swal.fire('Erreur', "Utilisateur non connecté ou ID manquant.", 'error');
+    return;
+  }
+
+  // Charger les réservations existantes pour cette salle
+  this.loading = true;
+  this.reservationService.getBySalleId(salleId).subscribe({
+    next: (reservations) => {
+      this.loading = false;
+      this.showReservationFormWithAvailability(salleId, reservations);
+    },
+    error: (err) => {
+      this.loading = false;
+      Swal.fire('Erreur', "Impossible de charger les réservations existantes.", 'error');
+      console.error(err);
+    }
+  });
+}
+
+private showReservationFormWithAvailability(salleId: string, existingReservations: any[]): void {
+  const currentUser = this.utilisateurService.getCurrentUser();
+  if (!currentUser) return;
+
+  // Filtrer les réservations validées
+  const validatedReservations = existingReservations.filter(r => r.statut === 'Validée');
+  
+  // Date de demain comme date minimale
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 16);
+
+  // Formater les réservations pour l'affichage
+  const formattedReservations = validatedReservations.map(res => {
+    const start = new Date(res.dateDebut);
+    const end = new Date(res.dateFin);
+    return {
+      date: start.toLocaleDateString('fr-FR'),
+      heures: `${start.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})} - ${end.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}`,
+      motif: res.motif || 'Non spécifié'
+    };
+  });
+
+  Swal.fire({
+    title: '<span style="color:#5e72e4; font-size: 1.5rem; font-weight: 600">Nouvelle réservation</span>',
+    html: `
+      <style>
+        .info-icon {
+          color: #5e72e4;
+          cursor: pointer;
+          margin-left: 8px;
+          font-size: 1.1rem;
+          vertical-align: middle;
+        }
+        .info-icon:hover {
+          color: #4a5acf;
+        }
+        .reservation-list {
+          max-height: 200px;
+          overflow-y: auto;
+          margin-top: 10px;
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          padding: 10px;
+        }
+        .reservation-item {
+          padding: 8px 0;
+          border-bottom: 1px solid #f0f2f5;
+        }
+        .reservation-item:last-child {
+          border-bottom: none;
+        }
+           .swal2-popup {
+          font-family: 'Poppins', sans-serif;
+          border-radius: 12px;
+        }
+        .swal2-popup .swal2-input, 
+        .swal2-popup .swal2-select,
+        .swal2-popup .swal2-textarea {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          background-color: #f8f9fe;
+          transition: all 0.3s;
+          font-size: 0.95rem;
+          color: #2d3748;
+          margin: 0.5rem 0;
+        }
+        .swal2-popup .swal2-input:focus, 
+        .swal2-popup .swal2-select:focus {
+          border-color: #5e72e4;
+          box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.15);
+          outline: none;
+        }
+        .swal2-popup .swal2-label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #525f7f;
+          font-weight: 500;
+          font-size: 0.9rem;
+          text-align: left;
+          width: 100%;
+        }
+        .swal2-popup .swal2-actions {
+          margin-top: 1.5rem;
+          gap: 0.75rem;
+        }
+        .swal2-popup .swal2-styled {
+          border-radius: 8px !important;
+          padding: 0.75rem 1.5rem !important;
+          font-weight: 600 !important;
+          font-size: 0.9rem !important;
+          transition: all 0.2s !important;
+        }
+        .swal2-popup .swal2-confirm {
+          background-color: #5e72e4 !important;
+        }
+        .swal2-popup .swal2-confirm:hover {
+          background-color: #4a5acf !important;
+          transform: translateY(-1px);
+        }
+        .swal2-popup .swal2-cancel:hover {
+          background-color: #e03150 !important;
+          transform: translateY(-1px);
+        }
+        @media (max-width: 600px) {
+          .swal2-popup {
+            width: 90% !important;
+            margin: 0 auto !important;
+          }
+      </style>
+      <div style="text-align: left; width: 100%">
+        <div style="position: relative; margin-bottom: 1.5rem;">
+          <label class="swal2-label">
+            Date de début 
+            <i class="fas fa-info-circle info-icon" id="info-icon"></i>
+          </label>
+          <i class="fas fa-calendar-plus" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
+          <input type="datetime-local" id="date-debut" class="swal2-input" min="${tomorrowStr}" style="padding-left: 40px !important;">
+        </div>
+
+        <div style="position: relative; margin-bottom: 1.5rem;">
+          <label class="swal2-label">Date de fin</label>
+          <i class="fas fa-calendar-check" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
+          <input type="datetime-local" id="date-fin" class="swal2-input" min="${tomorrowStr}" style="padding-left: 40px !important;">
+        </div>
+
+        <div style="position: relative; margin-bottom: 1.5rem;">
+          <label class="swal2-label">Motif</label>
+          <i class="fas fa-comment-dots" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
+          <input type="text" id="motif" class="swal2-input" placeholder="Ex: Réunion projet" style="padding-left: 40px !important;">
+        </div>
+        
+        <div id="reservation-errors" style="color: #f5365c; margin-top: 1rem;"></div>
+        
+        <div id="reservations-popup" style="display: none;">
+          <h4 style="color: #5e72e4; margin-bottom: 1rem;">Créneaux déjà réservés</h4>
+          ${formattedReservations.length > 0 ? 
+            `<div class="reservation-list">
+              ${formattedReservations.map(res => `
+                <div class="reservation-item">
+                  <strong>${res.date}</strong>: ${res.heures}
+                  ${res.motif ? `<div style="color: #525f7f; font-size: 0.9rem;">${res.motif}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>`
+            : '<p>Aucun créneau réservé pour cette salle</p>'}
+        </div>
+      </div>
+    `,
+    confirmButtonText: '<i class="fas fa-calendar-check"></i> Réserver',
+    cancelButtonText: '<i class="fas fa-times"></i> Annuler',
+    showCancelButton: true,
+    didOpen: () => {
+      // Gestion du clic sur l'icône d'information
+      const infoIcon = document.getElementById('info-icon');
+      const popup = document.getElementById('reservations-popup');
+      
+      if (infoIcon && popup) {
+        infoIcon.addEventListener('click', () => {
+          if (popup.style.display === 'none') {
+            popup.style.display = 'block';
+          } else {
+            popup.style.display = 'none';
+          }
+        });
+      }
+
+      // Vérification des conflits en temps réel (votre code existant)
+      const startInput = document.getElementById('date-debut') as HTMLInputElement;
+      const endInput = document.getElementById('date-fin') as HTMLInputElement;
+      const errorDiv = document.getElementById('reservation-errors');
+
+      const checkAvailability = () => {
+        if (!startInput.value || !endInput.value) return;
+        
+        const start = new Date(startInput.value);
+        const end = new Date(endInput.value);
+        
+        const isConflict = validatedReservations.some(res => {
+          const resStart = new Date(res.dateDebut);
+          const resEnd = new Date(res.dateFin);
+          return (start < resEnd && end > resStart);
+        });
+
+        if (isConflict) {
+          if (errorDiv) {
+            errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> Ce créneau est déjà réservé.';
+          }
+          return false;
+        } else {
+          if (errorDiv) {
+            errorDiv.innerHTML = '';
+          }
+          return true;
+        }
+      };
+
+      startInput.addEventListener('change', checkAvailability);
+      endInput.addEventListener('change', checkAvailability);
+    },
+    preConfirm: () => {
+const dateDebut = (document.getElementById('date-debut') as HTMLInputElement).value;
+      const dateFin = (document.getElementById('date-fin') as HTMLInputElement).value;
+      const motif = (document.getElementById('motif') as HTMLInputElement).value;
+
+      if (!dateDebut || !dateFin) {
+        Swal.showValidationMessage('Les dates de début et fin sont obligatoires.');
+        return false;
+      }
+
+      const start = new Date(dateDebut);
+      const end = new Date(dateFin);
+
+      if (end <= start) {
+        Swal.showValidationMessage('La date de fin doit être postérieure à la date de début.');
+        return false;
+      }
+
+      // Vérifier les conflits une dernière fois avant soumission
+      const isConflict = validatedReservations.some(res => {
+        const resStart = new Date(res.dateDebut);
+        const resEnd = new Date(res.dateFin);
+        
+        return (start < resEnd && end > resStart);
+      });
+
+      if (isConflict) {
+        Swal.showValidationMessage('Ce créneau est déjà réservé. Veuillez choisir un autre horaire.');
+        return false;
+      }
+
+      return {
+        salleId,
+        utilisateurId: currentUser.id,
+        dateDebut,
+        dateFin,
+        motif,
+        statut: 'EnAttente'
+      };    }
+  }).then((result) => {
+    if (result.isConfirmed && result.value) {
+      this.reservationService.create(result.value).subscribe({
+        next: () => {
+          Swal.fire({
+            title: 'Succès!',
+            text: 'La réservation a été enregistrée avec succès.',
+            icon: 'success',
+            confirmButtonColor: '#5e72e4',
+            timer: 2000
+          });
+          this.openReservationsCalendar(salleId);
+        },
+        error: (err) => {
+          Swal.fire({
+            title: 'Erreur!',
+            text: "La réservation a échoué. " + (err.error?.message || ''),
+            icon: 'error',
+            confirmButtonColor: '#f5365c'
+          });
+          console.error(err);
+        }
+      });
+    }
+  });
 }
 
 handleEventClick(clickInfo: EventClickArg) {
@@ -606,10 +893,7 @@ private showCalendarInModal(reservations: any[]): void {
           eventClick: (info) => {
             this.showReservationDetailsInModal(info.event, calendarModal);
           },
-          dateClick: (arg) => {
-            calendarModal.close();
-            this.openReservationForm(null, arg.dateStr);
-          }
+          
         });
         
         calendarApi.render();
@@ -968,154 +1252,18 @@ private getReservationStatusBorderColor(statut: string): string {
       }
     });
   }
-openReservationForm(salleId: string, dateStr: string): void {
-  const currentUser = this.utilisateurService.getCurrentUser();
-
-  if (!currentUser || !currentUser.id) {
-    Swal.fire('Erreur', "Utilisateur non connecté ou ID manquant.", 'error');
-    return;
-  }
-
-  const tomorrowStr = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16);
-
-  Swal.fire({
-    title: '<span style="color:#5e72e4; font-size: 1.5rem; font-weight: 600">Nouvelle réservation</span>',
-    html: `
-      <style>
-        .swal2-popup {
-          font-family: 'Poppins', sans-serif;
-          border-radius: 12px;
-        }
-        .swal2-popup .swal2-input, 
-        .swal2-popup .swal2-select,
-        .swal2-popup .swal2-textarea {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          border: 1px solid #e9ecef;
-          border-radius: 8px;
-          background-color: #f8f9fe;
-          transition: all 0.3s;
-          font-size: 0.95rem;
-          color: #2d3748;
-          margin: 0.5rem 0;
-        }
-        .swal2-popup .swal2-input:focus, 
-        .swal2-popup .swal2-select:focus {
-          border-color: #5e72e4;
-          box-shadow: 0 0 0 3px rgba(94, 114, 228, 0.15);
-          outline: none;
-        }
-        .swal2-popup .swal2-label {
-          display: block;
-          margin-bottom: 0.5rem;
-          color: #525f7f;
-          font-weight: 500;
-          font-size: 0.9rem;
-          text-align: left;
-          width: 100%;
-        }
-        .swal2-popup .swal2-actions {
-          margin-top: 1.5rem;
-          gap: 0.75rem;
-        }
-        .swal2-popup .swal2-styled {
-          border-radius: 8px !important;
-          padding: 0.75rem 1.5rem !important;
-          font-weight: 600 !important;
-          font-size: 0.9rem !important;
-          transition: all 0.2s !important;
-        }
-        .swal2-popup .swal2-confirm {
-          background-color: #5e72e4 !important;
-        }
-        .swal2-popup .swal2-confirm:hover {
-          background-color: #4a5acf !important;
-          transform: translateY(-1px);
-        }
-        .swal2-popup .swal2-cancel:hover {
-          background-color: #e03150 !important;
-          transform: translateY(-1px);
-        }
-        @media (max-width: 600px) {
-          .swal2-popup {
-            width: 90% !important;
-            margin: 0 auto !important;
-          }
-        }
-      </style>
-      <div style="text-align: left; width: 100%">
-        <div style="position: relative; margin-bottom: 1.5rem;">
-          <label class="swal2-label">Date de début</label>
-          <i class="fas fa-calendar-plus" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
-          <input type="datetime-local" id="date-debut" class="swal2-input" min="${tomorrowStr}" style="padding-left: 40px !important;">
-        </div>
-
-        <div style="position: relative; margin-bottom: 1.5rem;">
-          <label class="swal2-label">Date de fin</label>
-          <i class="fas fa-calendar-check" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
-          <input type="datetime-local" id="date-fin" class="swal2-input" min="${tomorrowStr}" style="padding-left: 40px !important;">
-        </div>
-
-        <div style="position: relative; margin-bottom: 1.5rem;">
-          <label class="swal2-label">Motif</label>
-          <i class="fas fa-comment-dots" style="position: absolute; left: 15px; top: 40px; color: #5e72e4;"></i>
-          <input type="text" id="motif" class="swal2-input" placeholder="Ex: Réunion projet" style="padding-left: 40px !important;">
-        </div>
-      </div>
-    `,
-    confirmButtonText: '<i class="fas fa-calendar-check"></i> Réserver',
-    cancelButtonText: '<i class="fas fa-times"></i> Annuler',
-    showCancelButton: true,
-    preConfirm: () => {
-      const dateDebut = (document.getElementById('date-debut') as HTMLInputElement).value;
-      const dateFin = (document.getElementById('date-fin') as HTMLInputElement).value;
-      const motif = (document.getElementById('motif') as HTMLInputElement).value;
-
-      if (!dateDebut || !dateFin) {
-        Swal.showValidationMessage('Les dates de début et fin sont obligatoires.');
-        return false;
-      }
-
-      if (new Date(dateFin) <= new Date(dateDebut)) {
-        Swal.showValidationMessage('La date de fin doit être postérieure à la date de début.');
-        return false;
-      }
-
-      return {
-        salleId,
-        utilisateurId: currentUser.id,
-        dateDebut,
-        dateFin,
-        motif,
-        statut: 'EnAttente'
-      };
-    }
-  }).then((result) => {
-    if (result.isConfirmed && result.value) {
-      this.reservationService.create(result.value).subscribe({
-        next: () => {
-          Swal.fire({
-            title: 'Succès!',
-            text: 'La salle a été réservée avec succès.',
-            icon: 'success',
-            confirmButtonColor: '#5e72e4',
-            timer: 2000
-          });
-          this.openReservationsCalendar(salleId);
-        },
-        error: (err) => {
-          Swal.fire({
-            title: 'Erreur!',
-            text: "La réservation a échoué.",
-            icon: 'error',
-            confirmButtonColor: '#f5365c'
-          });
-          console.error(err);
-        }
-      });
-    }
+  private hasTimeSlotConflict(newStart: Date, newEnd: Date, existingReservations: any[]): boolean {
+  return existingReservations.some(res => {
+    if (res.statut !== 'Validée') return false;
+    
+    const resStart = new Date(res.dateDebut);
+    const resEnd = new Date(res.dateFin);
+    
+    // Vérifie si les plages se chevauchent
+    return newStart < resEnd && newEnd > resStart;
   });
 }
+
 
 
 }
